@@ -3,8 +3,18 @@ import { LanguageContext } from './LanguageContext'
 import type { LanguageContextValue } from './LanguageContext'
 import { languageLabels, translations, type LanguageCode } from './translations'
 
+const languageStorageKey = 'gaavkaam.language'
+
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<LanguageCode>('mr')
+  const [language, setLanguageState] = useState<LanguageCode>(() => {
+    const stored = window.localStorage.getItem(languageStorageKey)
+    return stored === 'mr' || stored === 'hi' || stored === 'en' ? stored : 'mr'
+  })
+
+  function setLanguage(nextLanguage: LanguageCode) {
+    setLanguageState(nextLanguage)
+    window.localStorage.setItem(languageStorageKey, nextLanguage)
+  }
 
   const value: LanguageContextValue = {
     language,
