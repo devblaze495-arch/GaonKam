@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react'
 import { EmptyState, ErrorState, LoadingState } from '../components/states/AsyncStates'
 import { Button, Card, Rating, SearchInput, StatusBadge } from '../components/ui/Foundation'
 import { useLanguage } from '../i18n/useLanguage'
+import { useAuth } from '../auth/useAuth'
+import { localizedName } from '../types/auth'
 import { jobsService } from '../services/jobsService'
 import { servicesService } from '../services/servicesService'
 import { localizedText, type Job, type Service } from '../types'
 
 export function HomePage() {
   const { language, t } = useLanguage()
+  const { user } = useAuth()
   const [search, setSearch] = useState('')
   const [jobs, setJobs] = useState<Job[]>([])
   const [services, setServices] = useState<Service[]>([])
@@ -32,11 +35,12 @@ export function HomePage() {
   }, [])
 
   const visibleJobs = jobs.filter((job) => localizedText(job.title, language).includes(search) || localizedText(job.category, language).includes(search))
+  const displayName = localizedName(user?.profile?.fullName, language)
 
   return (
     <section className="page-section">
       <div className="topbar">
-        <div><span className="eyebrow">{t('location')}</span><h1>{t('welcome')}</h1><p>{t('homeIntro')}</p></div>
+        <div><span className="eyebrow">{t('location')}</span><h1>{t('welcome').replace('{name}', displayName)}</h1><p>{t('homeIntro')}</p></div>
         <button className="profile-chip" aria-label={t('profile')}><span>{language === 'en' ? 'S' : 'स'}</span><i /></button>
       </div>
 

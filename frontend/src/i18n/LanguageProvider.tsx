@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { LanguageContext } from './LanguageContext'
 import type { LanguageContextValue } from './LanguageContext'
-import { languageLabels, translations, type LanguageCode } from './translations'
+import { languageLabels, optionalNameTranslations, translations, type LanguageCode } from './translations'
 
 const languageStorageKey = 'gaavkaam.language'
 
@@ -19,7 +19,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const value: LanguageContextValue = {
     language,
     setLanguage,
-    t: (key) => translations[language][key],
+    t: (key) => key === 'englishName' || key === 'englishNamePlaceholder' ? optionalNameTranslations[language][key] : translations[language][key],
     languageLabels,
   }
 

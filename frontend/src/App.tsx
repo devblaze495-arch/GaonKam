@@ -9,6 +9,8 @@ import { LoginPage } from './pages/LoginPage'
 import { OnboardingPage } from './pages/OnboardingPage'
 import { OtpPage } from './pages/OtpPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
+import { ProfileEditPage } from './pages/ProfileEditPage'
+import { ProfilePage } from './pages/ProfilePage'
 import { ProfileSetupPage } from './pages/ProfileSetupPage'
 import { SetupCompletePage } from './pages/SetupCompletePage'
 import { ApplicationRoute, AuthEntryRoute, OnboardingRoute, SetupRoute } from './routes/RouteGuards'
@@ -37,7 +39,10 @@ function App() {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/jobs" element={<PlaceholderPage />} />
                 <Route path="/services" element={<PlaceholderPage />} />
-                <Route path="/profile" element={<PlaceholderPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/profile/edit" element={<ProfileEditPage />} />
+                <Route path="/profile/skills" element={<ProfileEditPage />} />
+                <Route path="/profile/preferences" element={<ProfileEditPage />} />
               </Route>
             </Route>
             <Route path="*" element={<LoadingState />} />

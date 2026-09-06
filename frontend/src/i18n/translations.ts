@@ -107,8 +107,84 @@ export type TranslationKey =
   | 'authLoading'
   | 'authError'
   | 'changeLanguage'
+  | 'profileTitle'
+  | 'editProfile'
+  | 'profilePhoto'
+  | 'phone'
+  | 'skills'
+  | 'addSkill'
+  | 'removeSkill'
+  | 'searchSkills'
+  | 'noSkills'
+  | 'experience'
+  | 'lessThanYear'
+  | 'oneThreeYears'
+  | 'threeFiveYears'
+  | 'fivePlusYears'
+  | 'workPreferences'
+  | 'dailyWage'
+  | 'perDayLabel'
+  | 'dailyWagePlaceholder'
+  | 'availability'
+  | 'availableToday'
+  | 'availableThisWeek'
+  | 'selectDays'
+  | 'notAvailable'
+  | 'transportation'
+  | 'vehicle'
+  | 'noVehicle'
+  | 'bicycle'
+  | 'motorcycle'
+  | 'scooter'
+  | 'autoRickshaw'
+  | 'tractor'
+  | 'car'
+  | 'pickupTruck'
+  | 'otherVehicle'
+  | 'canTravel'
+  | 'yes'
+  | 'no'
+  | 'maxTravelDistance'
+  | 'languagesKnown'
+  | 'appLanguage'
+  | 'trustAndRatings'
+  | 'rating'
+  | 'reviews'
+  | 'completedWork'
+  | 'trustExplanation'
+  | 'profileCompletion'
+  | 'basicInformation'
+  | 'wageSection'
+  | 'save'
+  | 'cancel'
+  | 'savedSuccess'
+  | 'saveError'
+  | 'profileLoadError'
+  | 'profileEmpty'
+  | 'retry'
+  | 'wageRequired'
+  | 'wageInvalid'
+  | 'daysRequired'
+  | 'languagesRequired'
+  | 'marathiLanguage'
+  | 'hindiLanguage'
+  | 'englishLanguage'
+  | 'englishName'
+  | 'englishNamePlaceholder'
+  | 'monday'
+  | 'tuesday'
+  | 'wednesday'
+  | 'thursday'
+  | 'friday'
+  | 'saturday'
+  | 'sunday'
+  | 'fiveKm'
+  | 'tenKm'
+  | 'twentyKm'
+  | 'thirtyPlusKm'
 
-export type TranslationDictionary = Record<TranslationKey, string>
+export type OptionalNameTranslationKey = 'englishName' | 'englishNamePlaceholder'
+export type TranslationDictionary = Record<Exclude<TranslationKey, OptionalNameTranslationKey>, string>
 
 export const translations: Record<LanguageCode, TranslationDictionary> = {
   mr: {
@@ -133,7 +209,7 @@ export const translations: Record<LanguageCode, TranslationDictionary> = {
     completed: 'पूर्ण',
     trustScore: 'विश्वास गुण',
     quickActions: 'तुम्हाला काय करायचे आहे?',
-    welcome: 'नमस्कार, सुरेश!',
+    welcome: 'नमस्कार, {name}!',
     homeIntro: 'आज तुमच्या गावात उपलब्ध असलेल्या संधी पहा.',
     searchPlaceholder: 'काम किंवा सेवा शोधा',
     language: 'भाषा',
@@ -212,6 +288,7 @@ export const translations: Record<LanguageCode, TranslationDictionary> = {
     authLoading: 'थोडा वेळ थांबा...',
     authError: 'काहीतरी चुकले. पुन्हा प्रयत्न करा.',
     changeLanguage: 'भाषा बदला',
+    profileTitle: 'माझे प्रोफाइल', editProfile: 'प्रोफाइल बदला', profilePhoto: 'प्रोफाइल फोटो', phone: 'मोबाइल नंबर', skills: 'माझी कौशल्ये', addSkill: 'कौशल्य जोडा', removeSkill: 'कौशल्य काढा', searchSkills: 'कौशल्य शोधा', noSkills: 'अजून कौशल्ये जोडलेली नाहीत.', experience: 'अनुभव', lessThanYear: '१ वर्षापेक्षा कमी', oneThreeYears: '१ ते ३ वर्षे', threeFiveYears: '३ ते ५ वर्षे', fivePlusYears: '५ वर्षांपेक्षा जास्त', workPreferences: 'कामाच्या पसंती', dailyWage: 'दिवसाची अपेक्षित मजुरी', perDayLabel: 'दिवसाला', dailyWagePlaceholder: 'उदा. ६५०', availability: 'उपलब्धता', availableToday: 'आज उपलब्ध', availableThisWeek: 'या आठवड्यात उपलब्ध', selectDays: 'दिवस निवडा', notAvailable: 'सध्या उपलब्ध नाही', transportation: 'प्रवासाची साधने', vehicle: 'वाहन', noVehicle: 'वाहन नाही', bicycle: 'सायकल', motorcycle: 'मोटरसायकल', scooter: 'स्कूटर', autoRickshaw: 'रिक्षा', tractor: 'ट्रॅक्टर', car: 'कार', pickupTruck: 'पिकअप / छोटा ट्रक', otherVehicle: 'इतर', canTravel: 'कामासाठी प्रवास करू शकता?', yes: 'होय', no: 'नाही', maxTravelDistance: 'जास्तीत जास्त अंतर', languagesKnown: 'मला येणाऱ्या भाषा', appLanguage: 'अॅपची भाषा', trustAndRatings: 'विश्वास आणि रेटिंग', rating: 'रेटिंग', reviews: 'अभिप्राय', completedWork: 'पूर्ण केलेली कामे', trustExplanation: 'विश्वास गुण backend कडून मिळतात. तो frontend मध्ये बदलला जात नाही.', profileCompletion: 'प्रोफाइल पूर्णता', basicInformation: 'मूलभूत माहिती', wageSection: 'मजुरी', save: 'जतन करा', cancel: 'रद्द करा', savedSuccess: 'तुमची माहिती जतन झाली आहे.', saveError: 'माहिती जतन करता आली नाही. पुन्हा प्रयत्न करा.', profileLoadError: 'प्रोफाइल आणता आले नाही.', profileEmpty: 'तुमची प्रोफाइल माहिती येथे दिसेल.', wageRequired: 'दिवसाची मजुरी टाका.', wageInvalid: 'मजुरी ₹१०० ते ₹१०,००० दरम्यान असावी.', daysRequired: 'किमान एक दिवस निवडा.', languagesRequired: 'किमान एक भाषा निवडा.', marathiLanguage: 'मराठी', hindiLanguage: 'हिंदी', englishLanguage: 'इंग्रजी', monday: 'सोमवार', tuesday: 'मंगळवार', wednesday: 'बुधवार', thursday: 'गुरुवार', friday: 'शुक्रवार', saturday: 'शनिवार', sunday: 'रविवार', fiveKm: '५ किमी', tenKm: '१० किमी', twentyKm: '२० किमी', thirtyPlusKm: '३०+ किमी',
   },
   hi: {
     appTitle: 'गावकाम',
@@ -235,7 +312,7 @@ export const translations: Record<LanguageCode, TranslationDictionary> = {
     completed: 'पूरा',
     trustScore: 'भरोसा अंक',
     quickActions: 'आप क्या करना चाहते हैं?',
-    welcome: 'नमस्ते, सुरेश!',
+    welcome: 'नमस्ते, {name}!',
     homeIntro: 'आज आपके गांव में उपलब्ध अवसर देखें।',
     searchPlaceholder: 'काम या सेवा खोजें',
     language: 'भाषा',
@@ -314,6 +391,7 @@ export const translations: Record<LanguageCode, TranslationDictionary> = {
     authLoading: 'थोड़ा इंतजार करें...',
     authError: 'कुछ गलत हुआ। फिर कोशिश करें।',
     changeLanguage: 'भाषा बदलें',
+    profileTitle: 'मेरी प्रोफ़ाइल', editProfile: 'प्रोफ़ाइल बदलें', profilePhoto: 'प्रोफ़ाइल फोटो', phone: 'मोबाइल नंबर', skills: 'मेरे कौशल', addSkill: 'कौशल जोड़ें', removeSkill: 'कौशल हटाएं', searchSkills: 'कौशल खोजें', noSkills: 'अभी कोई कौशल नहीं जोड़ा गया है।', experience: 'अनुभव', lessThanYear: '१ साल से कम', oneThreeYears: '१ से ३ साल', threeFiveYears: '३ से ५ साल', fivePlusYears: '५ साल से अधिक', workPreferences: 'काम की पसंद', dailyWage: 'दैनिक अपेक्षित मजदूरी', perDayLabel: 'प्रतिदिन', dailyWagePlaceholder: 'जैसे ६५०', availability: 'उपलब्धता', availableToday: 'आज उपलब्ध', availableThisWeek: 'इस सप्ताह उपलब्ध', selectDays: 'दिन चुनें', notAvailable: 'अभी उपलब्ध नहीं', transportation: 'यातायात', vehicle: 'वाहन', noVehicle: 'कोई वाहन नहीं', bicycle: 'साइकिल', motorcycle: 'मोटरसाइकिल', scooter: 'स्कूटर', autoRickshaw: 'ऑटो-रिक्शा', tractor: 'ट्रैक्टर', car: 'कार', pickupTruck: 'पिकअप / छोटा ट्रक', otherVehicle: 'अन्य', canTravel: 'क्या आप काम के लिए यात्रा कर सकते हैं?', yes: 'हां', no: 'नहीं', maxTravelDistance: 'अधिकतम दूरी', languagesKnown: 'मुझे आने वाली भाषाएं', appLanguage: 'ऐप की भाषा', trustAndRatings: 'भरोसा और रेटिंग', rating: 'रेटिंग', reviews: 'समीक्षाएं', completedWork: 'पूरा किया हुआ काम', trustExplanation: 'भरोसा अंक backend से मिलते हैं। इन्हें frontend में बदला नहीं जाता।', profileCompletion: 'प्रोफ़ाइल पूर्णता', basicInformation: 'मूलभूत जानकारी', wageSection: 'मजदूरी', save: 'सहेजें', cancel: 'रद्द करें', savedSuccess: 'आपकी जानकारी सहेज ली गई है।', saveError: 'जानकारी सहेज नहीं सके। फिर कोशिश करें।', profileLoadError: 'प्रोफ़ाइल नहीं ला सके।', profileEmpty: 'आपकी प्रोफ़ाइल जानकारी यहां दिखाई देगी।', wageRequired: 'दैनिक मजदूरी डालें।', wageInvalid: 'मजदूरी ₹१०० से ₹१०,००० के बीच होनी चाहिए।', daysRequired: 'कम से कम एक दिन चुनें।', languagesRequired: 'कम से कम एक भाषा चुनें।', marathiLanguage: 'मराठी', hindiLanguage: 'हिंदी', englishLanguage: 'अंग्रेज़ी', monday: 'सोमवार', tuesday: 'मंगलवार', wednesday: 'बुधवार', thursday: 'गुरुवार', friday: 'शुक्रवार', saturday: 'शनिवार', sunday: 'रविवार', fiveKm: '५ किमी', tenKm: '१० किमी', twentyKm: '२० किमी', thirtyPlusKm: '३०+ किमी',
   },
   en: {
     appTitle: 'GaavKaam',
@@ -337,7 +415,7 @@ export const translations: Record<LanguageCode, TranslationDictionary> = {
     completed: 'Completed',
     trustScore: 'Trust score',
     quickActions: 'What would you like to do?',
-    welcome: 'Hello, Suresh!',
+    welcome: 'Hello, {name}!',
     homeIntro: 'See opportunities available in your village today.',
     searchPlaceholder: 'Search for work or a service',
     language: 'Language',
@@ -416,5 +494,12 @@ export const translations: Record<LanguageCode, TranslationDictionary> = {
     authLoading: 'Please wait...',
     authError: 'Something went wrong. Try again.',
     changeLanguage: 'Change language',
+    profileTitle: 'My profile', editProfile: 'Edit profile', profilePhoto: 'Profile photo', phone: 'Mobile number', skills: 'My skills', addSkill: 'Add skill', removeSkill: 'Remove skill', searchSkills: 'Search skills', noSkills: 'No skills added yet.', experience: 'Experience', lessThanYear: 'Less than 1 year', oneThreeYears: '1–3 years', threeFiveYears: '3–5 years', fivePlusYears: '5+ years', workPreferences: 'Work preferences', dailyWage: 'Expected daily wage', perDayLabel: 'per day', dailyWagePlaceholder: 'e.g. 650', availability: 'Availability', availableToday: 'Available today', availableThisWeek: 'Available this week', selectDays: 'Select days', notAvailable: 'Not currently available', transportation: 'Transportation', vehicle: 'Vehicle', noVehicle: 'No vehicle', bicycle: 'Bicycle', motorcycle: 'Motorcycle', scooter: 'Scooter', autoRickshaw: 'Auto-rickshaw', tractor: 'Tractor', car: 'Car', pickupTruck: 'Pickup / mini truck', otherVehicle: 'Other', canTravel: 'Can you travel for work?', yes: 'Yes', no: 'No', maxTravelDistance: 'Maximum travel distance', languagesKnown: 'Languages known', appLanguage: 'App language', trustAndRatings: 'Trust and ratings', rating: 'Rating', reviews: 'Reviews', completedWork: 'Completed work', trustExplanation: 'Trust information comes from the backend. It is not changed in the frontend.', profileCompletion: 'Profile completion', basicInformation: 'Basic information', wageSection: 'Wage', save: 'Save', cancel: 'Cancel', savedSuccess: 'Your information was saved.', saveError: 'Could not save your information. Try again.', profileLoadError: 'Could not load your profile.', profileEmpty: 'Your profile information will appear here.', wageRequired: 'Enter your daily wage.', wageInvalid: 'Wage must be between ₹100 and ₹10,000.', daysRequired: 'Select at least one day.', languagesRequired: 'Select at least one language.', marathiLanguage: 'Marathi', hindiLanguage: 'Hindi', englishLanguage: 'English', monday: 'Monday', tuesday: 'Tuesday', wednesday: 'Wednesday', thursday: 'Thursday', friday: 'Friday', saturday: 'Saturday', sunday: 'Sunday', fiveKm: '5 km', tenKm: '10 km', twentyKm: '20 km', thirtyPlusKm: '30+ km',
   },
+}
+
+export const optionalNameTranslations: Record<LanguageCode, Record<OptionalNameTranslationKey, string>> = {
+  mr: { englishName: 'इंग्रजी नाव (पर्यायी)', englishNamePlaceholder: 'इंग्रजी नाव असल्यास टाका' },
+  hi: { englishName: 'अंग्रेज़ी नाम (वैकल्पिक)', englishNamePlaceholder: 'अगर हो तो अंग्रेज़ी नाम डालें' },
+  en: { englishName: 'English name (optional)', englishNamePlaceholder: 'Enter an English name if you use one' },
 }

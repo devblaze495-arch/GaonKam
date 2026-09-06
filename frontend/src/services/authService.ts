@@ -1,4 +1,4 @@
-import type { User, UserIntent, UserProfile } from '../types/auth'
+import { normalizeLocalizedName, type LocalizedName, type User, type UserIntent, type UserProfile } from '../types/auth'
 
 const userStorageKey = 'gaavkaam.auth.user'
 const onboardingStorageKey = 'gaavkaam.onboarding.completed'
@@ -23,7 +23,10 @@ const wait = (duration = 350) => new Promise((resolve) => window.setTimeout(reso
 
 function readUser() {
   const stored = window.localStorage.getItem(userStorageKey)
-  return stored ? JSON.parse(stored) as User : null
+  if (!stored) return null
+  const user = JSON.parse(stored) as User & { profile?: UserProfile & { fullName: LocalizedName | string } }
+  if (user.profile) user.profile.fullName = normalizeLocalizedName(user.profile.fullName) ?? { original: '' }
+  return user as User
 }
 
 function saveUser(user: User) {
