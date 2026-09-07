@@ -10,9 +10,9 @@ function defaultProfile(user: User): ProfileData {
   return {
     userId: user.id,
     fullName: normalizeLocalizedName(user.profile?.fullName) ?? { original: 'शुभ', en: 'Shubh' },
-    village: user.profile?.village ?? 'Karad',
-    taluka: user.profile?.taluka ?? 'Karad',
-    district: user.profile?.district ?? 'Satara',
+    village: user.profile?.village ?? '',
+    taluka: user.profile?.taluka ?? '',
+    district: user.profile?.district ?? '',
     preferredLanguage: user.profile?.preferredLanguage ?? 'mr',
     languagesKnown: user.profile?.languagesKnown ?? ['marathi', 'hindi'],
     skills: [{ skillId: 'farming', experience: 'five-plus' }, { skillId: 'general-labor', experience: 'three-five' }, { skillId: 'driving', experience: 'one-three' }],
@@ -27,7 +27,14 @@ function readProfile(user: User) {
   const stored = window.localStorage.getItem(`${profileStorageKey}${user.id}`)
   if (!stored) return defaultProfile(user)
   const profile = JSON.parse(stored) as ProfileData & { fullName: LocalizedName | string }
-  return { ...profile, fullName: normalizeLocalizedName(profile.fullName) ?? defaultProfile(user).fullName }
+  const fallback = defaultProfile(user)
+  return {
+    ...profile,
+    fullName: normalizeLocalizedName(user.profile?.fullName ?? profile.fullName) ?? fallback.fullName,
+    village: user.profile?.village ?? profile.village ?? fallback.village,
+    taluka: user.profile?.taluka ?? profile.taluka ?? fallback.taluka,
+    district: user.profile?.district ?? profile.district ?? fallback.district,
+  }
 }
 
 function saveProfile(profile: ProfileData) {

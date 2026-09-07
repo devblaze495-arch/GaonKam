@@ -9,4 +9,5 @@ export const jobStatusTone: Record<JobStatus, StatusTone> = {
   completed: 'success',
   cancelled: 'danger',
   expired: 'warning',
+  filled: 'danger',
 }

@@ -5,6 +5,8 @@ import { LoadingState } from './components/states/AsyncStates'
 import { LanguageProvider } from './i18n/LanguageProvider'
 import { HomePage } from './pages/HomePage'
 import { IntentSetupPage } from './pages/IntentSetupPage'
+import { JobDetailsPage } from './pages/JobDetailsPage'
+import { JobsPage } from './pages/JobsPage'
 import { LoginPage } from './pages/LoginPage'
 import { OnboardingPage } from './pages/OnboardingPage'
 import { OtpPage } from './pages/OtpPage'
@@ -37,7 +39,8 @@ function App() {
             <Route element={<ApplicationRoute />}>
               <Route element={<AppShell />}>
                 <Route path="/" element={<HomePage />} />
-                <Route path="/jobs" element={<PlaceholderPage />} />
+                <Route path="/jobs" element={<JobsPage />} />
+                <Route path="/jobs/:jobId" element={<JobDetailsPage />} />
                 <Route path="/services" element={<PlaceholderPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/profile/edit" element={<ProfileEditPage />} />
