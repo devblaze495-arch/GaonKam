@@ -19,7 +19,12 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const value: LanguageContextValue = {
     language,
     setLanguage,
-    t: (key) => key === 'englishName' || key === 'englishNamePlaceholder' ? optionalNameTranslations[language][key] : translations[language][key],
+    t: (key: string) => {
+      if (key === 'englishName' || key === 'englishNamePlaceholder') {
+        return optionalNameTranslations[language][key]
+      }
+      return translations[language][key] || String(key)
+    },
     languageLabels,
   }
 

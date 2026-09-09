@@ -2,6 +2,7 @@ import type { NextFunction, Response } from 'express'
 import { AuthenticatedRequest } from '../middleware/auth.js'
 import { ServiceCatalogService } from '../services/serviceCatalogService.js'
 import { successResponse } from '../utils/response.js'
+import { createServiceSchema, updateServiceSchema } from '../validators/serviceValidators.js'
 import { prisma } from '../utils/prisma.js'
 
 export class ServiceCatalogController {
@@ -44,6 +45,46 @@ export class ServiceCatalogController {
 
       const data = await ServiceCatalogService.getNearbyServices({ village, taluka, district })
       return res.json(successResponse(data, 'Nearby services retrieved successfully'))
+    } catch (error) {
+      return next(error)
+    }
+  }
+
+  /**
+   * POST /api/services (Create Service)
+   */
+  static async createService(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const validated = await createServiceSchema.parseAsync(req.body)
+      const data = await ServiceCatalogService.createService(req.user!.id, validated)
+      return res.status(201).json(successResponse(data, 'Service created successfully'))
+    } catch (error) {
+      return next(error)
+    }
+  }
+
+  /**
+   * PATCH /api/services/:serviceId (Edit Service)
+   */
+  static async updateService(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const serviceId = String(req.params.serviceId)
+      const validated = await updateServiceSchema.parseAsync(req.body)
+      const data = await ServiceCatalogService.updateService(serviceId, req.user!.id, validated)
+      return res.json(successResponse(data, 'Service updated successfully'))
+    } catch (error) {
+      return next(error)
+    }
+  }
+
+  /**
+   * DELETE /api/services/:serviceId (Deactivate Service)
+   */
+  static async deleteService(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const serviceId = String(req.params.serviceId)
+      const data = await ServiceCatalogService.deleteService(serviceId, req.user!.id)
+      return res.json(successResponse(data, 'Service deactivated successfully'))
     } catch (error) {
       return next(error)
     }

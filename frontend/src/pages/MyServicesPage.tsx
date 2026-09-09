@@ -1,0 +1,79 @@
+import { useState } from 'react'
+import { Alert, Button, Card, Field, Input, PageHeader, Select } from '../components/ui/Foundation'
+import { useAuth } from '../auth/useAuth'
+import { useLanguage } from '../i18n/useLanguage'
+import { servicesService } from '../services/servicesService'
+
+export function MyServicesPage() {
+  const { user } = useAuth()
+  const { t } = useLanguage()
+
+  const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
+  const [rateAmount, setRateAmount] = useState(500)
+  const [rateType, setRateType] = useState<'daily' | 'hourly' | 'fixed'>('daily')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [success, setSuccess] = useState(false)
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setIsSubmitting(true)
+    try {
+      await servicesService.createService({
+        name,
+        description,
+        rateAmount,
+        rateType,
+        village: user?.profile?.village || '',
+        taluka: user?.profile?.taluka || '',
+        district: user?.profile?.district || '',
+      })
+      setSuccess(true)
+      setName('')
+      setDescription('')
+    } catch {
+      alert('Error creating service.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <section className="page-section">
+      <PageHeader title={t('myServices')} backUrl="/services" />
+
+      {success && <Alert tone="success">Service listed successfully!</Alert>}
+
+      <Card>
+        <h3>{t('addServiceTitle')}</h3>
+        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 16, marginTop: 12 }}>
+          <Field label={t('serviceNameLabel')}>
+            <Input value={name} onChange={(e) => setName(e.target.value)} required placeholder="e.g. Electrician, Tractor Rental" />
+          </Field>
+
+          <Field label={t('serviceDescLabel')}>
+            <textarea className="form-control" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} required />
+          </Field>
+
+          <div className="profile-form-grid">
+            <Field label={t('rateTypeLabel')}>
+              <Select value={rateType} onChange={(e) => setRateType(e.target.value as any)}>
+                <option value="daily">{t('daily')}</option>
+                <option value="hourly">{t('hourly')}</option>
+                <option value="fixed">{t('fixed')}</option>
+              </Select>
+            </Field>
+
+            <Field label={t('serviceRateLabel')}>
+              <Input type="number" value={rateAmount} onChange={(e) => setRateAmount(Number(e.target.value))} required />
+            </Field>
+          </div>
+
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? t('loading') : t('save')}
+          </Button>
+        </form>
+      </Card>
+    </section>
+  )
+}

@@ -1,11 +1,11 @@
 import { createContext } from 'react'
-import type { LanguageCode, TranslationKey } from './translations'
+import type { LanguageCode } from './translations'
 import { languageLabels } from './translations'
 
 export type LanguageContextValue = {
   language: LanguageCode
   setLanguage: (language: LanguageCode) => void
-  t: (key: TranslationKey) => string
+  t: (key: any) => string
   languageLabels: typeof languageLabels
 }
 

@@ -1,76 +1,124 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { EmptyState, ErrorState, LoadingState } from '../components/states/AsyncStates'
-import { Button, Card, Rating, SearchInput, StatusBadge } from '../components/ui/Foundation'
-import { useLanguage } from '../i18n/useLanguage'
+import { Card, Rating } from '../components/ui/Foundation'
+import { LoadingState } from '../components/states/AsyncStates'
 import { useAuth } from '../auth/useAuth'
-import { localizedName } from '../types/auth'
+import { useLanguage } from '../i18n/useLanguage'
 import { jobsService } from '../services/jobsService'
 import { servicesService } from '../services/servicesService'
-import { profileService } from '../services/profileService'
-import { localizedText, type Job, type ProfileLocation, type Service } from '../types'
+import { localizedText, type Job, type Service } from '../types'
+import { localizedName } from '../types/auth'
+import { JobCard } from '../components/jobs/JobCard'
 
 export function HomePage() {
-  const { language, t } = useLanguage()
   const { user } = useAuth()
-  const [search, setSearch] = useState('')
+  const { language, t } = useLanguage()
   const [jobs, setJobs] = useState<Job[]>([])
   const [services, setServices] = useState<Service[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [hasError, setHasError] = useState(false)
-  const [profileLocation, setProfileLocation] = useState<ProfileLocation>()
 
   useEffect(() => {
-    let isMounted = true
-    if (!user) return () => { isMounted = false }
-    profileService.getProfile(user)
-      .then((profile) => Promise.all([jobsService.listNearby({ village: profile.village, taluka: profile.taluka, district: profile.district }), servicesService.listNearby()]).then(([nextJobs, nextServices]) => {
-        if (!isMounted) return
-        setProfileLocation({ village: profile.village, taluka: profile.taluka, district: profile.district })
-        setJobs(nextJobs)
-        setServices(nextServices)
-      }))
-      .catch(() => {
-        if (isMounted) setHasError(true)
+    const profileLocation = user?.profile ? { village: user.profile.village, taluka: user.profile.taluka, district: user.profile.district } : undefined
+    Promise.all([jobsService.listNearby(profileLocation), servicesService.listNearby(profileLocation?.village, profileLocation?.taluka, profileLocation?.district)])
+      .then(([nextJobs, nextServices]) => {
+        setJobs(nextJobs.slice(0, 4))
+        setServices(nextServices.slice(0, 3))
       })
-      .finally(() => {
-        if (isMounted) setIsLoading(false)
-      })
-    return () => { isMounted = false }
+      .finally(() => setIsLoading(false))
   }, [user])
 
-  const visibleJobs = jobs.filter((job) => localizedText(job.title, language).toLocaleLowerCase().includes(search.toLocaleLowerCase()) || localizedText(job.category, language).toLocaleLowerCase().includes(search.toLocaleLowerCase())).slice(0, 6)
-  const displayName = localizedName(user?.profile?.fullName, language)
-  const locationLabel = profileLocation ? [profileLocation.village, profileLocation.taluka, profileLocation.district].filter(Boolean).join(', ') || t('location') : t('location')
+  const displayName = user ? localizedName(user.profile?.fullName, language) : ''
 
   return (
-    <section className="page-section">
-      <div className="topbar">
-        <div><span className="eyebrow">{t('location')}</span><h1>{t('welcome').replace('{name}', displayName)}</h1><p>{t('homeIntro')}</p></div>
-        <button className="profile-chip" aria-label={t('profile')}><span>{language === 'en' ? 'S' : 'स'}</span><i /></button>
-      </div>
+    <div className="home-page" style={{ display: 'grid', gap: 20 }}>
+      <section className="welcome-banner" style={{ background: 'linear-gradient(135deg, #1b4d3e 0%, #276752 100%)', color: 'white', padding: '24px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(27, 77, 62, 0.15)' }}>
+        <div className="eyebrow" style={{ color: '#a7f3d0', fontSize: '0.8rem', letterSpacing: '1px' }}>{t('tagline')}</div>
+        <h1 style={{ margin: '6px 0 8px', fontSize: '1.6rem', fontWeight: 800 }}>
+          {displayName ? `नमस्कार, ${displayName}!` : t('headline')}
+        </h1>
+        <p style={{ margin: 0, opacity: 0.9, fontSize: '0.9rem', maxWidth: '500px' }}>{t('subheadline')}</p>
+      </section>
 
-      <SearchInput label={t('searchPlaceholder')} placeholder={t('searchPlaceholder')} value={search} onChange={(event) => setSearch(event.target.value)} />
+      <section className="quick-actions-section">
+        <h2 style={{ fontSize: '1.1rem', margin: '0 0 12px', fontWeight: 700 }}>{t('quickActions')}</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12 }}>
+          <Link to="/jobs" style={{ textDecoration: 'none' }}>
+            <Card style={{ padding: 14, textAlign: 'center', background: '#ecfdf5', borderColor: '#a7f3d0' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: 4 }}>🌾</div>
+              <strong style={{ color: '#065f46', fontSize: '0.9rem' }}>{t('findWork')}</strong>
+            </Card>
+          </Link>
 
-      <div className="quick-actions">
-        <div className="section-heading"><div><span className="eyebrow">{t('today')}</span><h2>{t('quickActions')}</h2></div></div>
-        <div className="action-grid">
-          <ActionTile tone="green" icon="↗" label={t('findWork')} />
-          <ActionTile tone="orange" icon="+" label={t('postWork')} />
-          <ActionTile tone="blue" icon="⌕" label={t('findService')} />
-          <ActionTile tone="plum" icon="✦" label={t('offerService')} />
+          <Link to="/post-job" style={{ textDecoration: 'none' }}>
+            <Card style={{ padding: 14, textAlign: 'center', background: '#f0f9ff', borderColor: '#bae6fd' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: 4 }}>📢</div>
+              <strong style={{ color: '#075985', fontSize: '0.9rem' }}>{t('postWork')}</strong>
+            </Card>
+          </Link>
+
+          <Link to="/services" style={{ textDecoration: 'none' }}>
+            <Card style={{ padding: 14, textAlign: 'center', background: '#fff7ed', borderColor: '#ffedd5' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: 4 }}>🛠️</div>
+              <strong style={{ color: '#9a3412', fontSize: '0.9rem' }}>{t('findServices')}</strong>
+            </Card>
+          </Link>
+
+          <Link to="/my-posted-jobs" style={{ textDecoration: 'none' }}>
+            <Card style={{ padding: 14, textAlign: 'center', background: '#faf5ff', borderColor: '#e9d5ff' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: 4 }}>📋</div>
+              <strong style={{ color: '#6b21a8', fontSize: '0.9rem' }}>{t('myPostedJobs')}</strong>
+            </Card>
+          </Link>
         </div>
-      </div>
+      </section>
 
-      <div className="section-heading"><div><span className="eyebrow">{locationLabel}</span><h2>{t('nearbyWork')}</h2></div><Link to="/jobs"><Button variant="quiet">{t('viewAll')} <span aria-hidden="true">→</span></Button></Link></div>
-      <div className="job-list">{isLoading ? <LoadingState /> : hasError ? <ErrorState title={t('errorTitle')} retryLabel={t('retry')} onRetry={() => window.location.reload()} /> : visibleJobs.length ? visibleJobs.map((job) => <Card key={job.id} className="job-card"><div className="job-card__top"><span className="category-mark">{localizedText(job.category, language).slice(0, 2)}</span><StatusBadge label={t('open')} tone="success" /></div><h3>{localizedText(job.title, language)}</h3><p className="muted">{localizedText(job.location, language)} · {localizedText(job.distance, language)}</p><div className="job-card__meta"><strong>{localizedText(job.payment, language)} <small>{t('perDay')}</small></strong><span>{localizedText(job.dateLabel, language)}</span></div><div className="job-card__footer"><span>{t('postedBy')} {localizedText(job.postedBy, language)}</span><Link to={`/jobs/${job.id}`}><Button variant="secondary">{t('viewDetails')}</Button></Link></div></Card>) : <EmptyState title={t('emptyTitle')} description={t('emptyDescription')} />}</div>
+      <section className="home-section">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <h2 style={{ fontSize: '1.1rem', margin: 0, fontWeight: 700 }}>{t('recentJobs')}</h2>
+          <Link to="/jobs" style={{ textDecoration: 'none', color: '#10b981', fontWeight: 600, fontSize: '0.85rem' }}>
+            {t('viewAll')} →
+          </Link>
+        </div>
+        {isLoading ? (
+          <LoadingState />
+        ) : (
+          <div className="jobs-list">
+            {jobs.map((job) => (
+              <JobCard key={job.id} job={job} />
+            ))}
+          </div>
+        )}
+      </section>
 
-      <div className="section-heading section-heading--services"><div><span className="eyebrow">{t('location')}</span><h2>{t('nearbyServices')}</h2></div><Button variant="quiet">{t('viewAll')} <span aria-hidden="true">→</span></Button></div>
-      <div className="service-list">{isLoading ? <LoadingState /> : services.map((service) => <Card key={service.id} className="service-card"><div className="service-avatar" aria-hidden="true">{localizedText(service.name, language).slice(0, 1)}</div><div className="service-card__body"><div className="service-card__heading"><h3>{localizedText(service.name, language)}</h3><Rating value={service.rating} /></div><p>{localizedText(service.provider, language)} · {localizedText(service.location, language)}</p><strong>{localizedText(service.rate, language)}</strong></div></Card>)}</div>
-    </section>
+      <section className="home-section">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <h2 style={{ fontSize: '1.1rem', margin: 0, fontWeight: 700 }}>{t('nearbyServices')}</h2>
+          <Link to="/services" style={{ textDecoration: 'none', color: '#10b981', fontWeight: 600, fontSize: '0.85rem' }}>
+            {t('viewAll')} →
+          </Link>
+        </div>
+        {isLoading ? (
+          <LoadingState />
+        ) : (
+          <div style={{ display: 'grid', gap: 12 }}>
+            {services.map((service) => (
+              <Card key={service.id} className="service-card">
+                <div className="service-avatar" aria-hidden="true">
+                  {localizedText(service.name, language).slice(0, 1)}
+                </div>
+                <div className="service-card__body">
+                  <div className="service-card__heading">
+                    <h3>{localizedText(service.name, language)}</h3>
+                    <Rating value={service.rating} />
+                  </div>
+                  <p>{localizedText(service.provider, language)} • {localizedText(service.location, language)}</p>
+                  <strong>{localizedText(service.rate, language)}</strong>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
   )
-}
-
-function ActionTile({ tone, icon, label }: { tone: string; icon: string; label: string }) {
-  return <button className={`action-tile action-tile--${tone}`}><span className="action-tile__icon" aria-hidden="true">{icon}</span><span>{label}</span><span className="action-tile__arrow" aria-hidden="true">↗</span></button>
 }
