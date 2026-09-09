@@ -1,6 +1,6 @@
 import express from 'express'
 import cors from 'cors'
-import healthRoutes from './routes/healthRoutes.js'
+import routes from './routes/index.js'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'
 
 const app = express()
@@ -12,7 +12,7 @@ app.get('/', (_req, res) => {
   res.json({ message: 'GaavKaam API is running' })
 })
 
-app.use('/api', healthRoutes)
+app.use('/api', routes)
 
 app.use(notFoundHandler)
 app.use(errorHandler)

@@ -6,10 +6,10 @@ export function successResponse<T>(data: T, message = 'Request successful') {
   }
 }
 
-export function errorResponse(message: string, details?: unknown) {
+export function errorResponse(message: string, errorCode = 'BAD_REQUEST') {
   return {
     success: false,
     message,
-    details,
+    errorCode,
   }
 }
