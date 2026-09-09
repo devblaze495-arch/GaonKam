@@ -7,15 +7,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ==========================================
+// ENUMS
+// ==========================================
+
 enum RoleName {
   USER
   ADMIN
 }
 
 enum LanguageCode {
-  MR
-  HI
-  EN
+  MR @map("mr")
+  HI @map("hi")
+  EN @map("en")
 }
 
 enum AccountStatus {
@@ -25,48 +29,103 @@ enum AccountStatus {
   DEACTIVATED
 }
 
-enum JobStatus {
-  DRAFT
-  OPEN
-  APPLICATIONS_RECEIVED
-  WORKERS_SELECTED
-  IN_PROGRESS
-  COMPLETION_PENDING
-  COMPLETED
-  CANCELLED
-  EXPIRED
-  DISPUTED
+enum UserIntent {
+  FIND_WORK     @map("find-work")
+  POST_WORK     @map("post-work")
+  FIND_SERVICE  @map("find-service")
+  OFFER_SERVICE @map("offer-service")
 }
 
-enum AssignmentStatus {
-  PENDING
-  ACCEPTED
-  DECLINED
-  CANCELLED
-  NO_SHOW
+enum SkillExperience {
+  LESS_THAN_YEAR @map("less-than-year")
+  ONE_THREE      @map("one-three")
+  THREE_FIVE     @map("three-five")
+  FIVE_PLUS      @map("five-plus")
 }
 
-enum JobApplicationStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
-  WITHDRAWN
-  CANCELLED
+enum AvailabilityMode {
+  TODAY         @map("today")
+  THIS_WEEK     @map("this-week")
+  SELECTED_DAYS @map("selected-days")
+  UNAVAILABLE   @map("unavailable")
 }
 
-enum WageType {
-  DAILY
-  HOURLY
-  FIXED
-  NEGOTIABLE
+enum DayOfWeek {
+  MONDAY    @map("monday")
+  TUESDAY   @map("tuesday")
+  WEDNESDAY @map("wednesday")
+  THURSDAY  @map("thursday")
+  FRIDAY    @map("friday")
+  SATURDAY  @map("saturday")
+  SUNDAY    @map("sunday")
 }
 
 enum VehicleType {
-  AUTO
-  PICKUP
-  TRACTOR
-  BUS
-  OTHER
+  NONE       @map("none")
+  BICYCLE    @map("bicycle")
+  MOTORCYCLE @map("motorcycle")
+  SCOOTER    @map("scooter")
+  AUTO       @map("auto")
+  TRACTOR    @map("tractor")
+  CAR        @map("car")
+  PICKUP     @map("pickup")
+  BUS        @map("bus")
+  OTHER      @map("other")
+}
+
+enum WageType {
+  DAILY      @map("daily")
+  HOURLY     @map("hourly")
+  FIXED      @map("fixed")
+  NEGOTIABLE @map("negotiable")
+}
+
+enum JobStatus {
+  DRAFT                 @map("draft")
+  OPEN                  @map("open")
+  PENDING               @map("pending")
+  APPLICATIONS_RECEIVED @map("applications_received")
+  WORKERS_SELECTED      @map("workers_selected")
+  IN_PROGRESS           @map("in-progress")
+  COMPLETION_PENDING    @map("completion_pending")
+  COMPLETED             @map("completed")
+  CANCELLED             @map("cancelled")
+  EXPIRED               @map("expired")
+  FILLED                @map("filled")
+  DISPUTED              @map("disputed")
+}
+
+enum ApplicationStatus {
+  PENDING   @map("pending")
+  ACCEPTED  @map("accepted")
+  REJECTED  @map("rejected")
+  WITHDRAWN @map("withdrawn")
+  CANCELLED @map("cancelled")
+}
+
+enum AssignmentStatus {
+  PENDING   @map("pending")
+  ASSIGNED  @map("assigned")
+  ACCEPTED  @map("accepted")
+  DECLINED  @map("declined")
+  CANCELLED @map("cancelled")
+  COMPLETED @map("completed")
+  NO_SHOW   @map("no_show")
+}
+
+enum CompletionStatus {
+  PENDING   @map("pending")
+  CONFIRMED @map("confirmed")
+  REJECTED  @map("rejected")
+}
+
+enum DisputeStatus {
+  OPEN          @map("open")
+  UNDER_REVIEW  @map("under_review")
+  INVESTIGATING @map("investigating")
+  RESOLVED      @map("resolved")
+  REJECTED      @map("rejected")
+  DISMISSED     @map("dismissed")
 }
 
 enum AvailabilityStatus {
@@ -81,107 +140,121 @@ enum ServiceAvailability {
   UNAVAILABLE
 }
 
-enum DisputeStatus {
-  OPEN
-  UNDER_REVIEW
-  RESOLVED
-  REJECTED
-}
-
-enum CompletionStatus {
-  PENDING
-  CONFIRMED
-  REJECTED
-}
+// ==========================================
+// MODELS
+// ==========================================
 
 model Role {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String   @id @default(cuid())
   name        RoleName @unique
   description String?
-  createdAt   DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   users UserRole[]
 }
 
-model User {
-  id                String        @id @default(uuid()) @db.Uuid
-  fullName          String
-  email             String?       @unique
-  passwordHash      String
-  profilePhoto      String?
-  mobile            String?
-  village           String?
-  district          String?
-  state             String?
-  latitude          Decimal?      @db.Decimal(9, 6)
-  longitude         Decimal?      @db.Decimal(9, 6)
-  preferredLanguage LanguageCode  @default(MR)
-  accountStatus     AccountStatus @default(ACTIVE)
-  // Trust score is stored here; trust/reputation calculations belong in a dedicated backend service.
-  trustScore        Int           @default(0)
-  createdAt         DateTime      @default(now()) @db.Timestamptz(3)
-  updatedAt         DateTime      @updatedAt @db.Timestamptz(3)
-
-  roles             UserRole[]
-  skills            UserSkill[]
-  postedJobs        Job[]             @relation("JobPoster")
-  jobApplications   JobApplication[]  @relation("Applicant")
-  assignments       JobAssignment[]   @relation("AssignedWorker")
-  reviewsWritten    Rating[]          @relation("Reviewer")
-  reviewsReceived   Rating[]          @relation("ReviewedUser")
-  raisedDisputes    Dispute[]         @relation("DisputeRaisedBy")
-  disputedAgainst   Dispute[]         @relation("DisputeAgainst")
-  resolvedDisputes  Dispute[]         @relation("DisputeResolvedBy")
-  servicesOffered   Service[]         @relation("ServiceProvider")
-  completionsMarked JobCompletion[]   @relation("CompletionMarkedBy")
-  availability      UserAvailability?
-}
-
-model UserAvailability {
-  id        String             @id @default(uuid()) @db.Uuid
-  userId    String             @unique @db.Uuid
-  status    AvailabilityStatus @default(AVAILABLE)
-  notes     String?
-  createdAt DateTime           @default(now()) @db.Timestamptz(3)
-  updatedAt DateTime           @updatedAt @db.Timestamptz(3)
-
-  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
-}
-
 model UserRole {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @db.Uuid
-  roleId    String   @db.Uuid
-  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  id        String   @id @default(cuid())
+  userId    String
+  roleId    String
+  createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
-  role Role @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@unique([userId, roleId])
   @@index([userId])
   @@index([roleId])
 }
 
-model Skill {
-  id          String   @id @default(uuid()) @db.Uuid
-  name        String   @unique
-  description String?
-  createdAt   DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+model User {
+  id                String            @id @default(cuid())
+  fullName          String
+  fullNameEn        String?
+  email             String?           @unique
+  passwordHash      String?
+  profilePhoto      String?
+  mobile            String?           @unique
+  village           String?
+  taluka            String?
+  district          String?
+  state             String?           @default("Maharashtra")
+  latitude          Decimal?          @db.Decimal(9, 6)
+  longitude         Decimal?          @db.Decimal(9, 6)
+  preferredLanguage String?           @default("mr")
+  languageCode      LanguageCode?     @default(MR)
+  accountStatus     AccountStatus?    @default(ACTIVE)
+  languagesKnown    String[]
+  intents           UserIntent[]
+  dailyWage         Int?
+  availability      AvailabilityMode? @default(THIS_WEEK)
+  selectedDays      DayOfWeek[]
+  vehicles          VehicleType[]
+  canTravel         Boolean           @default(true)
+  maxDistance       String?           @default("10")
+  trustScore        Int               @default(90)
+  rating            Float             @default(0.0)
+  reviewCount       Int               @default(0)
+  completedJobs     Int               @default(0)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
-  users UserSkill[]
-  jobs  JobSkill[]
+  // Legacy flat fields preserved for compatibility
+  skills     String[]
+  experience String?
+
+  // Relations
+  roles             UserRole[]
+  userSkills        UserSkill[]
+  postedJobs        Job[]             @relation("PostedJobs")
+  applications      JobApplication[]  @relation("AppliedJobs")
+  assignedJobs      JobAssignment[]   @relation("AssignedJobs")
+  completedJobsList JobCompletion[]   @relation("CompletedJobs")
+  completionsMarked JobCompletion[]   @relation("CompletionMarkedBy")
+  givenRatings      Rating[]          @relation("GivenRatings")
+  receivedRatings   Rating[]          @relation("ReceivedRatings")
+  raisedDisputes    Dispute[]         @relation("RaisedDisputes")
+  disputedAgainst   Dispute[]         @relation("DisputeAgainst")
+  resolvedDisputes  Dispute[]         @relation("DisputeResolvedBy")
+  services          Service[]         @relation("ProvidedServices")
+  userAvailability  UserAvailability?
+}
+
+model UserAvailability {
+  id        String             @id @default(cuid())
+  userId    String             @unique
+  status    AvailabilityStatus @default(AVAILABLE)
+  notes     String?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Skill {
+  id          String    @id
+  category    String?   @default("general")
+  name        String?
+  description String?
+  nameMr      String?
+  nameHi      String?
+  nameEn      String?
+  createdAt   DateTime? @default(now())
+  updatedAt   DateTime? @updatedAt
+
+  userSkills     UserSkill[]
+  requiredInJobs JobRequiredSkill[]
+  jobSkills      JobSkill[]
 }
 
 model UserSkill {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @db.Uuid
-  skillId   String   @db.Uuid
-  createdAt DateTime @default(now()) @db.Timestamptz(3)
-
-  user  User  @relation(fields: [userId], references: [id], onDelete: Restrict)
-  skill Skill @relation(fields: [skillId], references: [id], onDelete: Restrict)
+  id         String          @id @default(cuid())
+  userId     String
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skillId    String
+  skill      Skill           @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  experience SkillExperience @default(ONE_THREE)
 
   @@unique([userId, skillId])
   @@index([userId])
@@ -189,85 +262,110 @@ model UserSkill {
 }
 
 model JobCategory {
-  id          String   @id @default(uuid()) @db.Uuid
-  name        String   @unique
+  id          String    @id
+  name        String?
+  nameMr      String?
+  nameHi      String?
+  nameEn      String?
   description String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime? @default(now())
+  updatedAt   DateTime? @updatedAt
 
   jobs Job[]
 }
 
 model Job {
-  id                       String       @id @default(uuid()) @db.Uuid
-  posterId                 String       @db.Uuid
-  categoryId               String       @db.Uuid
-  title                    String
-  description              String
+  id                       String       @id @default(cuid())
+  title                    String?
+  titleMr                  String?
+  titleHi                  String?
+  titleEn                  String?
+  description              String?
+  descriptionMr            String?
+  descriptionHi            String?
+  descriptionEn            String?
+  categoryId               String
+  category                 JobCategory  @relation(fields: [categoryId], references: [id])
+  postedById               String
+  postedBy                 User         @relation("PostedJobs", fields: [postedById], references: [id])
   village                  String?
+  taluka                   String?
   district                 String?
-  state                    String?
+  state                    String?      @default("Maharashtra")
   latitude                 Decimal?     @db.Decimal(9, 6)
   longitude                Decimal?     @db.Decimal(9, 6)
-  workDate                 DateTime?    @db.Date
-  startTime                DateTime?    @db.Timestamptz(3)
-  estimatedDurationMinutes Int?
-  wageType                 WageType     @default(NEGOTIABLE)
-  wageAmount               Decimal?     @db.Decimal(10, 2)
-  currency                 String       @default("INR")
-  isWageNegotiable         Boolean      @default(true)
+  distanceKm               Float        @default(0.0)
+  wageAmount               Int?
+  wageAmountDecimal        Decimal?     @db.Decimal(10, 2)
+  wageType                 WageType     @default(DAILY)
+  currency                 String?      @default("INR")
+  isWageNegotiable         Boolean?     @default(true)
   wageNotes                String?
-  transportationProvided   Boolean      @default(false)
+  workDate                 String?
+  workDateObj              DateTime?    @db.Date
+  startTime                String?      @default("08:00")
+  startTimeObj             DateTime?
+  estimatedDurationMinutes Int?
+  transportationProvided   Boolean?     @default(false)
   vehicleType              VehicleType?
   vehicleCapacity          Int?
   transportNotes           String?
-  applicationDeadline      DateTime?    @db.Timestamptz(3)
+  applicationDeadline      DateTime?
   status                   JobStatus    @default(OPEN)
+  workersRequired          Int          @default(1)
   numberOfWorkers          Int          @default(1)
-  createdAt                DateTime     @default(now()) @db.Timestamptz(3)
-  updatedAt                DateTime     @updatedAt @db.Timestamptz(3)
+  postedAt                 DateTime     @default(now())
+  createdAt                DateTime     @default(now())
+  updatedAt                DateTime     @updatedAt
 
-  poster       User             @relation("JobPoster", fields: [posterId], references: [id], onDelete: Restrict)
-  category     JobCategory      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  skills       JobSkill[]
-  applications JobApplication[]
-  assignments  JobAssignment[]
-  completions  JobCompletion[]
-  ratings      Rating[]
-  disputes     Dispute[]
+  requiredSkills JobRequiredSkill[]
+  jobSkills      JobSkill[]
+  applications   JobApplication[]
+  assignments    JobAssignment[]
+  completions    JobCompletion[]
+  disputes       Dispute[]
+  ratings        Rating[]
 
-  @@index([posterId])
+  @@index([postedById])
   @@index([categoryId])
   @@index([status])
-  @@index([applicationDeadline])
-  @@index([workDate])
 }
 
 model JobSkill {
-  id      String @id @default(uuid()) @db.Uuid
-  jobId   String @db.Uuid
-  skillId String @db.Uuid
+  id      String @id @default(cuid())
+  jobId   String
+  skillId String
 
-  job   Job   @relation(fields: [jobId], references: [id], onDelete: Restrict)
-  skill Skill @relation(fields: [skillId], references: [id], onDelete: Restrict)
+  job   Job   @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
 
   @@unique([jobId, skillId])
   @@index([jobId])
   @@index([skillId])
 }
 
-model JobApplication {
-  id          String               @id @default(uuid()) @db.Uuid
-  jobId       String               @db.Uuid
-  applicantId String               @db.Uuid
-  message     String?
-  status      JobApplicationStatus @default(PENDING)
-  createdAt   DateTime             @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime             @updatedAt @db.Timestamptz(3)
+model JobRequiredSkill {
+  jobId   String
+  job     Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  skillId String
+  skill   Skill  @relation(fields: [skillId], references: [id], onDelete: Cascade)
 
-  job         Job             @relation(fields: [jobId], references: [id], onDelete: Restrict)
-  applicant   User            @relation("Applicant", fields: [applicantId], references: [id], onDelete: Restrict)
+  @@id([jobId, skillId])
+}
+
+model JobApplication {
+  id          String            @id @default(cuid())
+  jobId       String
+  job         Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  applicantId String
+  applicant   User              @relation("AppliedJobs", fields: [applicantId], references: [id], onDelete: Cascade)
+  message     String?
+  status      ApplicationStatus @default(PENDING)
+  submittedAt DateTime          @default(now())
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
   assignments JobAssignment[]
 
   @@unique([jobId, applicantId])
@@ -276,24 +374,25 @@ model JobApplication {
 }
 
 model JobAssignment {
-  id            String           @id @default(uuid()) @db.Uuid
-  jobId         String           @db.Uuid
-  workerId      String           @db.Uuid
-  applicationId String?          @db.Uuid
-  status        AssignmentStatus @default(PENDING)
-  selectedAt    DateTime         @default(now()) @db.Timestamptz(3)
-  acceptedAt    DateTime?        @db.Timestamptz(3)
-  declinedAt    DateTime?        @db.Timestamptz(3)
-  cancelledAt   DateTime?        @db.Timestamptz(3)
-  noShowAt      DateTime?        @db.Timestamptz(3)
-  createdAt     DateTime         @default(now()) @db.Timestamptz(3)
-  updatedAt     DateTime         @updatedAt @db.Timestamptz(3)
+  id            String           @id @default(cuid())
+  jobId         String
+  job           Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  workerId      String
+  worker        User             @relation("AssignedJobs", fields: [workerId], references: [id])
+  applicationId String?
+  application   JobApplication?  @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  status        AssignmentStatus @default(ASSIGNED)
+  assignedAt    DateTime         @default(now())
+  selectedAt    DateTime?        @default(now())
+  acceptedAt    DateTime?
+  declinedAt    DateTime?
+  cancelledAt   DateTime?
+  noShowAt      DateTime?
+  createdAt     DateTime?        @default(now())
+  updatedAt     DateTime?        @updatedAt
 
-  job         Job             @relation(fields: [jobId], references: [id], onDelete: Restrict)
-  worker      User            @relation("AssignedWorker", fields: [workerId], references: [id], onDelete: Restrict)
-  application JobApplication? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
-  completion  JobCompletion?
-  disputes    Dispute[]
+  completion JobCompletion?
+  disputes   Dispute[]
 
   @@unique([jobId, workerId])
   @@index([jobId, status])
@@ -301,66 +400,67 @@ model JobAssignment {
 }
 
 model JobCompletion {
-  id                String           @id @default(uuid()) @db.Uuid
-  assignmentId      String           @unique @db.Uuid
-  jobId             String           @db.Uuid
-  markedById        String           @db.Uuid
-  status            CompletionStatus @default(PENDING)
-  markedAt          DateTime?        @db.Timestamptz(3)
-  workerConfirmedAt DateTime?        @db.Timestamptz(3)
-  posterConfirmedAt DateTime?        @db.Timestamptz(3)
-  note              String?
-  createdAt         DateTime         @default(now()) @db.Timestamptz(3)
-  updatedAt         DateTime         @updatedAt @db.Timestamptz(3)
+  id                  String            @id @default(cuid())
+  jobId               String
+  job                 Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  workerId            String
+  worker              User              @relation("CompletedJobs", fields: [workerId], references: [id])
+  assignmentId        String?           @unique
+  assignment          JobAssignment?    @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
+  markedById          String?
+  markedBy            User?             @relation("CompletionMarkedBy", fields: [markedById], references: [id], onDelete: SetNull)
+  status              CompletionStatus? @default(PENDING)
+  completedAt         DateTime          @default(now())
+  markedAt            DateTime?
+  workerConfirmedAt   DateTime?
+  posterConfirmedAt   DateTime?
+  confirmedByEmployer Boolean           @default(false)
+  note                String?
+  createdAt           DateTime?         @default(now())
+  updatedAt           DateTime?         @updatedAt
 
-  assignment JobAssignment @relation(fields: [assignmentId], references: [id], onDelete: Restrict)
-  job        Job           @relation(fields: [jobId], references: [id], onDelete: Restrict)
-  markedBy   User          @relation("CompletionMarkedBy", fields: [markedById], references: [id], onDelete: Restrict)
-
+  @@unique([jobId, workerId])
   @@index([jobId])
   @@index([markedById])
-  @@index([status])
 }
 
 model Rating {
-  id             String   @id @default(uuid()) @db.Uuid
-  jobId          String   @db.Uuid
-  reviewerId     String   @db.Uuid
-  reviewedUserId String   @db.Uuid
-  rating         Int      @db.SmallInt
-  review         String?
-  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  id         String   @id @default(cuid())
+  jobId      String?
+  job        Job?     @relation(fields: [jobId], references: [id])
+  reviewerId String
+  reviewer   User     @relation("GivenRatings", fields: [reviewerId], references: [id])
+  revieweeId String
+  reviewee   User     @relation("ReceivedRatings", fields: [revieweeId], references: [id])
+  rating     Float
+  reviewText String?
+  review     String?
+  createdAt  DateTime @default(now())
 
-  job          Job  @relation(fields: [jobId], references: [id], onDelete: Restrict)
-  reviewer     User @relation("Reviewer", fields: [reviewerId], references: [id], onDelete: Restrict)
-  reviewedUser User @relation("ReviewedUser", fields: [reviewedUserId], references: [id], onDelete: Restrict)
-
-  @@unique([jobId, reviewerId, reviewedUserId])
   @@index([jobId])
-  @@index([reviewedUserId])
   @@index([reviewerId])
+  @@index([revieweeId])
 }
 
 model Dispute {
-  id            String        @id @default(uuid()) @db.Uuid
-  jobId         String        @db.Uuid
-  assignmentId  String?       @db.Uuid
-  raisedById    String        @db.Uuid
-  againstUserId String?       @db.Uuid
+  id            String         @id @default(cuid())
+  jobId         String
+  job           Job            @relation(fields: [jobId], references: [id])
+  assignmentId  String?
+  assignment    JobAssignment? @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
+  raisedById    String
+  raisedBy      User           @relation("RaisedDisputes", fields: [raisedById], references: [id])
+  againstUserId String?
+  againstUser   User?          @relation("DisputeAgainst", fields: [againstUserId], references: [id], onDelete: SetNull)
+  resolvedById  String?
+  resolvedBy    User?          @relation("DisputeResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
   reason        String
   description   String?
-  status        DisputeStatus @default(OPEN)
+  status        DisputeStatus  @default(OPEN)
   resolution    String?
-  resolvedById  String?       @db.Uuid
-  createdAt     DateTime      @default(now()) @db.Timestamptz(3)
-  updatedAt     DateTime      @updatedAt @db.Timestamptz(3)
-  resolvedAt    DateTime?     @db.Timestamptz(3)
-
-  job         Job            @relation(fields: [jobId], references: [id], onDelete: Restrict)
-  assignment  JobAssignment? @relation(fields: [assignmentId], references: [id], onDelete: Restrict)
-  raisedBy    User           @relation("DisputeRaisedBy", fields: [raisedById], references: [id], onDelete: Restrict)
-  againstUser User?          @relation("DisputeAgainst", fields: [againstUserId], references: [id], onDelete: SetNull)
-  resolvedBy  User?          @relation("DisputeResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime?      @updatedAt
+  resolvedAt    DateTime?
 
   @@index([jobId])
   @@index([assignmentId])
@@ -369,36 +469,49 @@ model Dispute {
 }
 
 model ServiceCategory {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String   @id @default(cuid())
   name        String   @unique
   description String?
-  createdAt   DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   services Service[]
 }
 
 model Service {
-  id           String              @id @default(uuid()) @db.Uuid
-  providerId   String              @db.Uuid
-  categoryId   String              @db.Uuid
-  title        String
-  description  String
-  location     String?
-  village      String?
-  district     String?
-  state        String?
-  latitude     Decimal?            @db.Decimal(9, 6)
-  longitude    Decimal?            @db.Decimal(9, 6)
-  dailyRate    Decimal?            @db.Decimal(10, 2)
-  availability ServiceAvailability @default(AVAILABLE)
-  createdAt    DateTime            @default(now()) @db.Timestamptz(3)
-  updatedAt    DateTime            @updatedAt @db.Timestamptz(3)
-
-  provider User            @relation("ServiceProvider", fields: [providerId], references: [id], onDelete: Restrict)
-  category ServiceCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  id                  String               @id @default(cuid())
+  title               String?
+  nameMr              String?
+  nameHi              String?
+  nameEn              String?
+  description         String?
+  descriptionMr       String?
+  descriptionHi       String?
+  descriptionEn       String?
+  providerId          String?
+  provider            User?                @relation("ProvidedServices", fields: [providerId], references: [id])
+  categoryId          String?
+  category            ServiceCategory?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  providerNameMr      String?
+  providerNameHi      String?
+  providerNameEn      String?
+  location            String?
+  village             String?
+  taluka              String?
+  district            String?
+  state               String?
+  latitude            Decimal?             @db.Decimal(9, 6)
+  longitude           Decimal?             @db.Decimal(9, 6)
+  dailyRate           Decimal?             @db.Decimal(10, 2)
+  rateMr              String?
+  rateHi              String?
+  rateEn              String?
+  rating              Float                @default(0.0)
+  available           Boolean              @default(true)
+  serviceAvailability ServiceAvailability? @default(AVAILABLE)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 
   @@index([providerId])
   @@index([categoryId])
-  @@index([availability])
 }
