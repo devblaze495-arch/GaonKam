@@ -7,6 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ==========================================
+// ENUMS
+// ==========================================
+
 enum UserIntent {
   FIND_WORK     @map("find-work")
   POST_WORK     @map("post-work")
@@ -73,34 +77,148 @@ enum ApplicationStatus {
 }
 
 enum AssignmentStatus {
+  PENDING
   ASSIGNED  @map("assigned")
+  ACCEPTED
+  DECLINED
   CANCELLED @map("cancelled")
   COMPLETED @map("completed")
+  NO_SHOW
 }
 
 enum DisputeStatus {
   OPEN          @map("open")
+  UNDER_REVIEW
   INVESTIGATING @map("investigating")
   RESOLVED      @map("resolved")
+  REJECTED
   DISMISSED     @map("dismissed")
+}
+
+enum RoleName {
+  USER
+  ADMIN
+}
+
+enum LanguageCode {
+  MR
+  HI
+  EN
+}
+
+enum AccountStatus {
+  ACTIVE
+  PENDING_REVIEW
+  SUSPENDED
+  DEACTIVATED
+}
+
+enum JobStatus {
+  DRAFT
+  OPEN
+  APPLICATIONS_RECEIVED
+  WORKERS_SELECTED
+  IN_PROGRESS
+  COMPLETION_PENDING
+  COMPLETED
+  CANCELLED
+  EXPIRED
+  DISPUTED
+}
+
+enum JobApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+  CANCELLED
+}
+
+enum WageType {
+  DAILY
+  HOURLY
+  FIXED
+  NEGOTIABLE
+}
+
+enum VehicleType {
+  AUTO
+  PICKUP
+  TRACTOR
+  BUS
+  OTHER
+}
+
+enum AvailabilityStatus {
+  AVAILABLE
+  BUSY
+  UNAVAILABLE
+}
+
+enum ServiceAvailability {
+  AVAILABLE
+  BUSY
+  UNAVAILABLE
+}
+
+enum CompletionStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+}
+
+// ==========================================
+// MODELS
+// ==========================================
+
+model Role {
+  id          String   @id @default(cuid())
+  name        RoleName @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users UserRole[]
+}
+
+model UserRole {
+  id        String   @id @default(cuid())
+  userId    String
+  roleId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
 }
 
 model User {
   id                String            @id @default(cuid())
   mobile            String?           @unique
+  email             String?           @unique
+  passwordHash      String?
+  profilePhoto      String?
   fullName          String
   fullNameEn        String?
   village           String?
   taluka            String?
   district          String?
   state             String?           @default("Maharashtra")
+  latitude          Decimal?          @db.Decimal(9, 6)
+  longitude         Decimal?          @db.Decimal(9, 6)
   preferredLanguage String?           @default("mr")
+  languageCode      LanguageCode?     @default(MR)
+  accountStatus     AccountStatus?    @default(ACTIVE)
   languagesKnown    String[]
   intents           UserIntent[]
   dailyWage         Int?
   availability      AvailabilityMode? @default(THIS_WEEK)
   selectedDays      DayOfWeek[]
   vehicles          VehicleOption[]
+  vehicleType       VehicleType?
   canTravel         Boolean           @default(true)
   maxDistance       String?           @default("10")
   trustScore        Int               @default(90)
@@ -110,31 +228,52 @@ model User {
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 
-  // Legacy fields preserved for compatibility
+  // Legacy flat fields preserved for compatibility
   skills     String[]
   experience String?
 
   // Relations
+  roles             UserRole[]
   userSkills        UserSkill[]
-  postedJobs        Job[]            @relation("PostedJobs")
-  applications      JobApplication[] @relation("AppliedJobs")
-  assignedJobs      JobAssignment[]  @relation("AssignedJobs")
-  completedJobsList JobCompletion[]  @relation("CompletedJobs")
-  givenRatings      Rating[]         @relation("GivenRatings")
-  receivedRatings   Rating[]         @relation("ReceivedRatings")
-  raisedDisputes    Dispute[]        @relation("RaisedDisputes")
-  services          Service[]        @relation("ProvidedServices")
+  postedJobs        Job[]             @relation("PostedJobs")
+  applications      JobApplication[]  @relation("AppliedJobs")
+  assignedJobs      JobAssignment[]   @relation("AssignedJobs")
+  completedJobsList JobCompletion[]   @relation("CompletedJobs")
+  completionsMarked JobCompletion[]   @relation("CompletionMarkedBy")
+  givenRatings      Rating[]          @relation("GivenRatings")
+  receivedRatings   Rating[]          @relation("ReceivedRatings")
+  raisedDisputes    Dispute[]         @relation("RaisedDisputes")
+  disputedAgainst   Dispute[]         @relation("DisputeAgainst")
+  resolvedDisputes  Dispute[]         @relation("DisputeResolvedBy")
+  services          Service[]         @relation("ProvidedServices")
+  userAvailability  UserAvailability?
+}
+
+model UserAvailability {
+  id        String             @id @default(cuid())
+  userId    String             @unique
+  status    AvailabilityStatus @default(AVAILABLE)
+  notes     String?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Skill {
-  id       String @id
-  category String
-  nameMr   String
-  nameHi   String
-  nameEn   String
+  id          String    @id
+  category    String
+  name        String?
+  description String?
+  nameMr      String?
+  nameHi      String?
+  nameEn      String?
+  createdAt   DateTime? @default(now())
+  updatedAt   DateTime? @updatedAt
 
   userSkills     UserSkill[]
   requiredInJobs JobRequiredSkill[]
+  jobSkills      JobSkill[]
 }
 
 model UserSkill {
@@ -149,48 +288,85 @@ model UserSkill {
 }
 
 model JobCategory {
-  id          String  @id
-  nameMr      String
-  nameHi      String
-  nameEn      String
+  id          String    @id
+  name        String?
+  nameMr      String?
+  nameHi      String?
+  nameEn      String?
   description String?
-  isActive    Boolean @default(true)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime? @default(now())
+  updatedAt   DateTime? @updatedAt
 
   jobs Job[]
 }
 
 model Job {
-  id              String             @id @default(cuid())
-  titleMr         String
-  titleHi         String
-  titleEn         String
-  descriptionMr   String
-  descriptionHi   String
-  descriptionEn   String
-  categoryId      String
-  category        JobCategory        @relation(fields: [categoryId], references: [id])
-  village         String
-  taluka          String
-  district        String
-  state           String?            @default("Maharashtra")
-  distanceKm      Float              @default(0.0)
-  wageAmount      Int
-  wageType        JobWageType        @default(DAILY)
-  workDate        String
-  startTime       String             @default("08:00")
-  workersRequired Int                @default(1)
-  status          JobLifecycleStatus @default(OPEN)
-  postedById      String
-  postedBy        User               @relation("PostedJobs", fields: [postedById], references: [id])
-  postedAt        DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  id                       String             @id @default(cuid())
+  title                    String?
+  titleMr                  String?
+  titleHi                  String?
+  titleEn                  String?
+  description              String?
+  descriptionMr            String?
+  descriptionHi            String?
+  descriptionEn            String?
+  categoryId               String
+  category                 JobCategory        @relation(fields: [categoryId], references: [id])
+  village                  String?
+  taluka                   String?
+  district                 String?
+  state                    String?            @default("Maharashtra")
+  latitude                 Decimal?           @db.Decimal(9, 6)
+  longitude                Decimal?           @db.Decimal(9, 6)
+  distanceKm               Float              @default(0.0)
+  wageAmount               Int?
+  wageAmountDecimal        Decimal?           @db.Decimal(10, 2)
+  wageType                 JobWageType        @default(DAILY)
+  wageTypeEnum             WageType?          @default(DAILY)
+  currency                 String?            @default("INR")
+  isWageNegotiable         Boolean?           @default(true)
+  wageNotes                String?
+  workDate                 String?
+  workDateObj              DateTime?          @db.Date
+  startTime                String?            @default("08:00")
+  startTimeObj             DateTime?
+  estimatedDurationMinutes Int?
+  transportationProvided   Boolean?           @default(false)
+  vehicleType              VehicleType?
+  vehicleCapacity          Int?
+  transportNotes           String?
+  applicationDeadline      DateTime?
+  workersRequired          Int                @default(1)
+  numberOfWorkers          Int                @default(1)
+  status                   JobLifecycleStatus @default(OPEN)
+  jobStatus                JobStatus?         @default(OPEN)
+  postedById               String
+  postedBy                 User               @relation("PostedJobs", fields: [postedById], references: [id])
+  postedAt                 DateTime           @default(now())
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
 
   requiredSkills JobRequiredSkill[]
+  jobSkills      JobSkill[]         @relation("JobSkillRel")
   applications   JobApplication[]
   assignments    JobAssignment[]
   completions    JobCompletion[]
   disputes       Dispute[]
   ratings        Rating[]
+}
+
+model JobSkill {
+  id      String @id @default(cuid())
+  jobId   String
+  skillId String
+
+  job   Job   @relation("JobSkillRel", fields: [jobId], references: [id], onDelete: Cascade)
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, skillId])
+  @@index([jobId])
+  @@index([skillId])
 }
 
 model JobRequiredSkill {
@@ -203,38 +379,66 @@ model JobRequiredSkill {
 }
 
 model JobApplication {
-  id          String            @id @default(cuid())
-  jobId       String
-  job         Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  applicantId String
-  applicant   User              @relation("AppliedJobs", fields: [applicantId], references: [id], onDelete: Cascade)
-  status      ApplicationStatus @default(PENDING)
-  submittedAt DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id           String                @id @default(cuid())
+  jobId        String
+  job          Job                   @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  applicantId  String
+  applicant    User                  @relation("AppliedJobs", fields: [applicantId], references: [id], onDelete: Cascade)
+  message      String?
+  status       ApplicationStatus     @default(PENDING)
+  jobAppStatus JobApplicationStatus? @default(PENDING)
+  submittedAt  DateTime              @default(now())
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  assignments JobAssignment[]
 
   @@unique([jobId, applicantId])
 }
 
 model JobAssignment {
-  id         String           @id @default(cuid())
-  jobId      String
-  job        Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  workerId   String
-  worker     User             @relation("AssignedJobs", fields: [workerId], references: [id])
-  status     AssignmentStatus @default(ASSIGNED)
-  assignedAt DateTime         @default(now())
+  id            String           @id @default(cuid())
+  jobId         String
+  job           Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  workerId      String
+  worker        User             @relation("AssignedJobs", fields: [workerId], references: [id])
+  applicationId String?
+  application   JobApplication?  @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  status        AssignmentStatus @default(ASSIGNED)
+  assignedAt    DateTime         @default(now())
+  selectedAt    DateTime?        @default(now())
+  acceptedAt    DateTime?
+  declinedAt    DateTime?
+  cancelledAt   DateTime?
+  noShowAt      DateTime?
+  createdAt     DateTime?        @default(now())
+  updatedAt     DateTime?        @updatedAt
+
+  completion JobCompletion?
+  disputes   Dispute[]
 
   @@unique([jobId, workerId])
 }
 
 model JobCompletion {
-  id                  String   @id @default(cuid())
+  id                  String            @id @default(cuid())
   jobId               String
-  job                 Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  job                 Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
   workerId            String
-  worker              User     @relation("CompletedJobs", fields: [workerId], references: [id])
-  completedAt         DateTime @default(now())
-  confirmedByEmployer Boolean  @default(false)
+  worker              User              @relation("CompletedJobs", fields: [workerId], references: [id])
+  assignmentId        String?           @unique
+  assignment          JobAssignment?    @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
+  markedById          String?
+  markedBy            User?             @relation("CompletionMarkedBy", fields: [markedById], references: [id], onDelete: SetNull)
+  completionStatus    CompletionStatus? @default(PENDING)
+  completedAt         DateTime          @default(now())
+  markedAt            DateTime?
+  workerConfirmedAt   DateTime?
+  posterConfirmedAt   DateTime?
+  confirmedByEmployer Boolean           @default(false)
+  note                String?
+  createdAt           DateTime?         @default(now())
+  updatedAt           DateTime?         @updatedAt
 
   @@unique([jobId, workerId])
 }
@@ -249,42 +453,72 @@ model Rating {
   reviewee   User     @relation("ReceivedRatings", fields: [revieweeId], references: [id])
   rating     Float
   reviewText String?
+  review     String?
   createdAt  DateTime @default(now())
 }
 
 model Dispute {
-  id         String        @id @default(cuid())
-  jobId      String
-  job        Job           @relation(fields: [jobId], references: [id])
-  raisedById String
-  raisedBy   User          @relation("RaisedDisputes", fields: [raisedById], references: [id])
-  reason     String
-  status     DisputeStatus @default(OPEN)
-  createdAt  DateTime      @default(now())
-  resolvedAt DateTime?
+  id            String         @id @default(cuid())
+  jobId         String
+  job           Job            @relation(fields: [jobId], references: [id])
+  assignmentId  String?
+  assignment    JobAssignment? @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
+  raisedById    String
+  raisedBy      User           @relation("RaisedDisputes", fields: [raisedById], references: [id])
+  againstUserId String?
+  againstUser   User?          @relation("DisputeAgainst", fields: [againstUserId], references: [id], onDelete: SetNull)
+  resolvedById  String?
+  resolvedBy    User?          @relation("DisputeResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
+  reason        String
+  description   String?
+  status        DisputeStatus  @default(OPEN)
+  resolution    String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime?      @updatedAt
+  resolvedAt    DateTime?
+}
+
+model ServiceCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  services Service[]
 }
 
 model Service {
-  id             String   @id @default(cuid())
-  nameMr         String
-  nameHi         String
-  nameEn         String
-  descriptionMr  String?
-  descriptionHi  String?
-  descriptionEn  String?
-  providerId     String?
-  provider       User?    @relation("ProvidedServices", fields: [providerId], references: [id])
-  providerNameMr String?
-  providerNameHi String?
-  providerNameEn String?
-  village        String?
-  taluka         String?
-  district       String?
-  rateMr         String?
-  rateHi         String?
-  rateEn         String?
-  rating         Float    @default(0.0)
-  available      Boolean  @default(true)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                  String               @id @default(cuid())
+  title               String?
+  nameMr              String?
+  nameHi              String?
+  nameEn              String?
+  description         String?
+  descriptionMr       String?
+  descriptionHi       String?
+  descriptionEn       String?
+  providerId          String?
+  provider            User?                @relation("ProvidedServices", fields: [providerId], references: [id])
+  categoryId          String?
+  category            ServiceCategory?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  providerNameMr      String?
+  providerNameHi      String?
+  providerNameEn      String?
+  location            String?
+  village             String?
+  taluka              String?
+  district            String?
+  state               String?
+  latitude            Decimal?             @db.Decimal(9, 6)
+  longitude           Decimal?             @db.Decimal(9, 6)
+  dailyRate           Decimal?             @db.Decimal(10, 2)
+  rateMr              String?
+  rateHi              String?
+  rateEn              String?
+  rating              Float                @default(0.0)
+  available           Boolean              @default(true)
+  serviceAvailability ServiceAvailability? @default(AVAILABLE)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 }
