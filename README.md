@@ -77,6 +77,17 @@ Copy the example environment file and adjust values:
 cp .env.example .env
 ```
 
+### Backend setup
+
+```bash
+cd backend
+cp .env.example .env
+npm install
+npm run prisma:generate
+npm run prisma:validate
+npm run dev
+```
+
 ### Start the backend
 
 ```bash
