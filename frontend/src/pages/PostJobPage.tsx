@@ -57,8 +57,9 @@ export function PostJobPage() {
         district,
       })
       navigate('/my-jobs')
-    } catch {
-      setError(t('error'))
+    } catch (err: any) {
+      console.error('Job post error:', err)
+      setError(err?.message || t('error'))
     } finally {
       setIsSubmitting(false)
     }

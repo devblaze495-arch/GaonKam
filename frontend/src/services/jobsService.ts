@@ -41,116 +41,105 @@ export type JobAssignmentItem = {
   confirmedAt?: string
 }
 
-export type JobsService = {
-  getJobs: (filters?: JobFilters) => Promise<Job[]>
-  getJobById: (id: string) => Promise<Job | null>
-  listNearby: (profileLocation?: ProfileLocation) => Promise<Job[]>
-  createJob: (input: CreateJobInput) => Promise<Job>
-  editJob: (id: string, input: Partial<CreateJobInput>) => Promise<Job>
-  cancelJob: (id: string) => Promise<Job>
-  getMyPostedJobs: () => Promise<Job[]>
-  getJobApplicationsForPoster: (jobId: string) => Promise<JobApplicationItem[]>
-  updateApplicationStatus: (jobId: string, applicationId: string, status: 'accepted' | 'rejected') => Promise<any>
-  getJobAssignmentsForPoster: (jobId: string) => Promise<JobAssignmentItem[]>
-  submitWorkCompletion: (jobId: string, assignmentId: string) => Promise<any>
-  confirmWorkCompletion: (jobId: string, assignmentId: string) => Promise<any>
-  createJobRating: (jobId: string, input: { targetUserId: string; rating: number; comment?: string }) => Promise<any>
-  createJobDispute: (jobId: string, input: { reason: string; description: string }) => Promise<any>
-}
+export const jobsService = {
+  async getJobs(filters?: JobFilters): Promise<Job[]> {
+    const params = new URLSearchParams()
+    if (filters?.query) params.set('query', filters.query)
+    if (filters?.categoryId && (filters.categoryId as string) !== 'all') params.set('categoryId', filters.categoryId)
+    if (filters?.maxDistance) params.set('maxDistance', String(filters.maxDistance))
+    if (filters?.sort) params.set('sort', filters.sort)
+    if (filters?.profileLocation?.village) params.set('village', filters.profileLocation.village)
+    if (filters?.profileLocation?.taluka) params.set('taluka', filters.profileLocation.taluka)
+    if (filters?.profileLocation?.district) params.set('district', filters.profileLocation.district)
 
-export const jobsService: JobsService = {
-  async getJobs(filters = {}) {
-    const queryParams = new URLSearchParams()
-    if (filters.query) queryParams.set('query', filters.query)
-    if (filters.categoryId) queryParams.set('categoryId', filters.categoryId)
-    if (filters.maxDistance) queryParams.set('maxDistance', String(filters.maxDistance))
-    if (filters.minWage) queryParams.set('minWage', String(filters.minWage))
-    if (filters.date) queryParams.set('date', filters.date)
-    if (filters.sort) queryParams.set('sort', filters.sort)
-    if (filters.profileLocation?.village) queryParams.set('village', filters.profileLocation.village)
-    if (filters.profileLocation?.taluka) queryParams.set('taluka', filters.profileLocation.taluka)
-    if (filters.profileLocation?.district) queryParams.set('district', filters.profileLocation.district)
-
-    const qs = queryParams.toString()
-    return apiRequest<Job[]>(`/jobs${qs ? `?${qs}` : ''}`)
+    const queryStr = params.toString()
+    return apiRequest<Job[]>(`/jobs${queryStr ? `?${queryStr}` : ''}`)
   },
 
-  async getJobById(id) {
-    return apiRequest<Job>(`/jobs/${id}`)
+  async getJobById(id: string): Promise<Job | null> {
+    try {
+      return await apiRequest<Job>(`/jobs/${id}`)
+    } catch {
+      return null
+    }
   },
 
-  async listNearby(profileLocation) {
-    const queryParams = new URLSearchParams()
-    if (profileLocation?.village) queryParams.set('village', profileLocation.village)
-    if (profileLocation?.taluka) queryParams.set('taluka', profileLocation.taluka)
-    if (profileLocation?.district) queryParams.set('district', profileLocation.district)
-
-    const qs = queryParams.toString()
-    return apiRequest<Job[]>(`/jobs/nearby${qs ? `?${qs}` : ''}`)
+  async listNearby(profileLocation?: ProfileLocation): Promise<Job[]> {
+    const params = new URLSearchParams()
+    if (profileLocation?.village) params.set('village', profileLocation.village)
+    if (profileLocation?.taluka) params.set('taluka', profileLocation.taluka)
+    if (profileLocation?.district) params.set('district', profileLocation.district)
+    const queryStr = params.toString()
+    return apiRequest<Job[]>(`/jobs/nearby${queryStr ? `?${queryStr}` : ''}`)
   },
 
-  async createJob(input) {
+  async createJob(input: CreateJobInput): Promise<Job> {
+    const payload = {
+      title: input.title,
+      description: input.description,
+      categoryId: input.categoryId,
+      wageAmount: Number(input.paymentAmount),
+      paymentAmount: Number(input.paymentAmount),
+      wageType: input.paymentType || 'daily',
+      paymentType: input.paymentType || 'daily',
+      workersRequired: Number(input.workersRequired) || 1,
+      workDate: input.workDate,
+      startTime: input.startTime || '08:00',
+      village: input.village,
+      taluka: input.taluka || input.village,
+      district: input.district,
+      state: 'Maharashtra',
+      requiredSkills: input.requiredSkillIds || [],
+      requiredSkillIds: input.requiredSkillIds || [],
+    }
+
     return apiRequest<Job>('/jobs', {
       method: 'POST',
-      body: JSON.stringify(input),
+      body: JSON.stringify(payload),
     })
   },
 
-  async editJob(id, input) {
+  async editJob(id: string, input: Partial<CreateJobInput>): Promise<Job> {
     return apiRequest<Job>(`/jobs/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(input),
     })
   },
 
-  async cancelJob(id) {
+  async cancelJob(id: string): Promise<Job> {
     return apiRequest<Job>(`/jobs/${id}/cancel`, {
       method: 'PATCH',
     })
   },
 
-  async getMyPostedJobs() {
+  async getMyPostedJobs(): Promise<Job[]> {
     return apiRequest<Job[]>('/jobs/me/posted')
   },
 
-  async getJobApplicationsForPoster(jobId) {
+  async getJobApplicationsForPoster(jobId: string): Promise<JobApplicationItem[]> {
     return apiRequest<JobApplicationItem[]>(`/jobs/${jobId}/applications`)
   },
 
-  async updateApplicationStatus(jobId, applicationId, status) {
+  async updateApplicationStatus(jobId: string, applicationId: string, status: 'accepted' | 'rejected') {
     return apiRequest<any>(`/jobs/${jobId}/applications/${applicationId}`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     })
   },
 
-  async getJobAssignmentsForPoster(jobId) {
+  async getJobAssignmentsForPoster(jobId: string): Promise<JobAssignmentItem[]> {
     return apiRequest<JobAssignmentItem[]>(`/jobs/${jobId}/assignments`)
   },
 
-  async submitWorkCompletion(jobId, assignmentId) {
-    return apiRequest<any>(`/jobs/${jobId}/assignments/${assignmentId}/completion`, {
+  async submitWorkCompletion(jobId: string, assignmentId: string) {
+    return apiRequest<any>(`/jobs/${jobId}/assignments/${assignmentId}/complete`, {
       method: 'POST',
     })
   },
 
-  async confirmWorkCompletion(jobId, assignmentId) {
-    return apiRequest<any>(`/jobs/${jobId}/assignments/${assignmentId}/completion`, {
-      method: 'PATCH',
-    })
-  },
-
-  async createJobRating(jobId, input) {
-    return apiRequest<any>(`/jobs/${jobId}/ratings`, {
+  async confirmWorkCompletion(jobId: string, assignmentId: string) {
+    return apiRequest<any>(`/jobs/${jobId}/assignments/${assignmentId}/confirm`, {
       method: 'POST',
-      body: JSON.stringify(input),
-    })
-  },
-
-  async createJobDispute(jobId, input) {
-    return apiRequest<any>(`/jobs/${jobId}/disputes`, {
-      method: 'POST',
-      body: JSON.stringify(input),
     })
   },
 }

@@ -355,7 +355,8 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
   "deleteAccount": "खाते हटवा",
   "deleteAccountConfirm": "तुम्हाला तुमचे खाते नक्की हटवायचे आहे का? ही क्रिया पूर्ववत करता येणार नाही आणि तुमचा सर्व डेटा कायमचा हटवला जाईल.",
   "deleteAccountBtn": "खाते कायमचे हटवा",
-  "deletingAccount": "खाते हटवले जात आहे..."
+  "deletingAccount": "खाते हटवले जात आहे...",
+  "findServices": "सेवा शोधा"
 },
   hi: {
   "tagline": "काम गाँव का, विकास सबका",
@@ -432,7 +433,7 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
   "profile": "प्रोफ़ाइल",
   "notifications": "सूचनाएं",
   "findWork": "काम खोजें",
-  "postWork": "काम पोस्ट करें",
+  "postWork": "काम दें",
   "findService": "सेवा खोजें",
   "offerService": "सेवा शुरू करें",
   "nearbyWork": "आसपास के काम",
@@ -697,7 +698,8 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
   "deleteAccount": "खाता हटाएं",
   "deleteAccountConfirm": "क्या आप वाकई अपना खाता हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती और आपका सारा डेटा हमेशा के लिए हटा दिया जाएगा।",
   "deleteAccountBtn": "खाता स्थायी रूप से हटाएं",
-  "deletingAccount": "खाता हटाया जा रहा है..."
+  "deletingAccount": "खाता हटाया जा रहा है...",
+  "findServices": "सेवाएँ खोजें"
 },
   en: {
   "tagline": "Rural employment and service platform",
@@ -773,8 +775,8 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
   "home": "Home",
   "profile": "My profile",
   "notifications": "Notifications",
-  "findWork": "Find work",
-  "postWork": "Post work",
+  "findWork": "Find Work",
+  "postWork": "Post Work",
   "findService": "Find a service",
   "offerService": "Offer a service",
   "nearbyWork": "Nearby work",
@@ -787,7 +789,7 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
   "completed": "Completed",
   "trustScore": "Trust score",
   "quickActions": "What would you like to do?",
-  "welcome": "Hello, {name}!",
+  "welcome": "Welcome",
   "homeIntro": "See opportunities available in your village today.",
   "searchPlaceholder": "Search for work or a service",
   "language": "Language",
@@ -1039,6 +1041,7 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
   "deleteAccount": "Delete Account",
   "deleteAccountConfirm": "Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently removed.",
   "deleteAccountBtn": "Permanently Delete Account",
-  "deletingAccount": "Deleting account..."
+  "deletingAccount": "Deleting account...",
+  "findServices": "Find Services"
 },
 }

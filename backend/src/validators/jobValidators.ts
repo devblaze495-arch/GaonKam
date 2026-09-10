@@ -50,13 +50,21 @@ export const createJobSchema = z.object({
   taluka: z.string().optional(),
   district: z.string().optional(),
   state: z.string().optional().default('Maharashtra'),
-  wageAmount: z.number().int().min(100, 'Minimum wage amount is ₹100'),
-  wageType: z.enum(['daily', 'hourly', 'fixed', 'negotiable']).optional().default('daily'),
+  wageAmount: z.coerce.number().min(100, 'Minimum wage amount is ₹100').optional(),
+  paymentAmount: z.coerce.number().optional(),
+  wageType: z.enum(['daily', 'hourly', 'fixed', 'negotiable']).optional(),
+  paymentType: z.enum(['daily', 'hourly', 'fixed', 'negotiable']).optional(),
   workDate: z.string().min(1, 'Work date is required'),
   startTime: z.string().optional().default('08:00'),
-  workersRequired: z.number().int().min(1, 'At least 1 worker is required').optional(),
+  workersRequired: z.coerce.number().min(1, 'At least 1 worker is required').optional().default(1),
   requiredSkills: z.array(z.string()).optional().default([]),
-})
+  requiredSkillIds: z.array(z.string()).optional(),
+}).transform((data) => ({
+  ...data,
+  wageAmount: data.wageAmount ?? data.paymentAmount ?? 500,
+  wageType: data.wageType ?? data.paymentType ?? 'daily',
+  requiredSkills: (data.requiredSkills && data.requiredSkills.length > 0) ? data.requiredSkills : (data.requiredSkillIds || []),
+}))
 
 export const editJobSchema = z.object({
   title: z

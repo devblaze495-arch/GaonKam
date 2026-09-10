@@ -343,7 +343,7 @@ export class ProfileService {
       // 1. Delete user ratings given or received
       await tx.rating.deleteMany({
         where: {
-          OR: [{ fromUserId: userId }, { toUserId: userId }],
+          OR: [{ reviewerId: userId }, { revieweeId: userId }],
         },
       })
 
@@ -373,7 +373,7 @@ export class ProfileService {
 
       // 6. Delete user's posted jobs and their dependencies
       const userJobs = await tx.job.findMany({
-        where: { employerId: userId },
+        where: { postedById: userId },
         select: { id: true },
       })
       const userJobIds = userJobs.map((j) => j.id)
