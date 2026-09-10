@@ -15,6 +15,7 @@ import { ServicesPage } from './pages/ServicesPage'
 import { MyServicesPage } from './pages/MyServicesPage'
 
 import { LoginPage } from './pages/LoginPage'
+import { WelcomePage } from './pages/WelcomePage'
 import { OnboardingPage } from './pages/OnboardingPage'
 import { OtpPage } from './pages/OtpPage'
 import { ProfileEditPage } from './pages/ProfileEditPage'
@@ -35,7 +36,7 @@ function App() {
             </Route>
 
             <Route element={<AuthEntryRoute />}>
-              <Route path="/login" element={<LoginPage />} />
+              <Route path="/login" element={<WelcomePage />} />
               <Route path="/login/mobile" element={<LoginPage />} />
               <Route path="/login/otp" element={<OtpPage />} />
             </Route>

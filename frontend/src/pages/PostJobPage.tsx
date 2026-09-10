@@ -1,43 +1,42 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Alert, Button, Card, Field, Input, PageHeader, Select } from '../components/ui/Foundation'
-import { useAuth } from '../auth/useAuth'
+import { ChevronLeft, ArrowRight } from 'lucide-react'
+import { Button, Card, Field, Input, Select } from '../components/ui/Foundation'
 import { useLanguage } from '../i18n/useLanguage'
-import { jobsService } from '../services/jobsService'
 import { skillOptions } from '../data/profileData'
+import { jobsService } from '../services/jobsService'
 
 export function PostJobPage() {
-  const { user } = useAuth()
-  const { language, t } = useLanguage()
+  const { language, t, localizeCategory, localizeWageType } = useLanguage()
   const navigate = useNavigate()
-
   const [step, setStep] = useState(1)
+
+  const [title, setTitle] = useState('')
+  const [categoryId, setCategoryId] = useState('agriculture')
+  const [description, setDescription] = useState('')
+  const [paymentType, setPaymentType] = useState<'daily' | 'fixed'>('daily')
+  const [paymentAmount, setPaymentAmount] = useState<number>(600)
+  const [workersRequired, setWorkersRequired] = useState<number>(2)
+  const [workDate, setWorkDate] = useState('')
+  const [startTime, setStartTime] = useState('08:00')
+  const [village, setVillage] = useState('')
+  const [taluka] = useState('')
+  const [district, setDistrict] = useState('')
+  const [requiredSkillIds, setRequiredSkillIds] = useState<string[]>(['farming'])
+
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [categoryId, setCategoryId] = useState('agriculture')
-  const [requiredSkillIds, setRequiredSkillIds] = useState<string[]>([])
-  const [paymentType, setPaymentType] = useState<'daily' | 'fixed'>('daily')
-  const [paymentAmount, setPaymentAmount] = useState(600)
-  const [workersRequired, setWorkersRequired] = useState(2)
-  const [workDate, setWorkDate] = useState('2026-09-12')
-  const [startTime, setStartTime] = useState('08:00')
-  const [village, setVillage] = useState(user?.profile?.village || '')
-  const [taluka, setTaluka] = useState(user?.profile?.taluka || '')
-  const [district, setDistrict] = useState(user?.profile?.district || '')
-
-  function toggleSkill(skillId: string) {
+  function toggleSkill(id: string) {
     setRequiredSkillIds((prev) =>
-      prev.includes(skillId) ? prev.filter((id) => id !== skillId) : [...prev, skillId]
+      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id],
     )
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!title.trim() || !description.trim() || !village.trim()) {
-      return setError(t('profileEmpty'))
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!title.trim() || !description.trim() || !workDate || !village.trim() || !district.trim()) {
+      return setError(t('requiredField') || 'Please fill in all required fields.')
     }
     setError('')
     setIsSubmitting(true)
@@ -54,32 +53,55 @@ export function PostJobPage() {
         workDate,
         startTime,
         village,
-        taluka,
+        taluka: taluka || village,
         district,
       })
       navigate('/my-jobs')
     } catch {
-      setError(t('saveError'))
+      setError(t('error'))
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <section className="page-section">
-      <PageHeader title={t('postWorkTitle')} subtitle={t('postWorkSubtitle')} />
-
-      <div className="step-indicator">
-        <div className={`step-dot ${step >= 1 ? 'is-active' : ''}`} />
-        <div className={`step-dot ${step >= 2 ? 'is-active' : ''}`} />
-        <div className={`step-dot ${step >= 3 ? 'is-active' : ''}`} />
+    <div className="find-work-page">
+      {/* Header bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+        <button type="button" onClick={() => (step > 1 ? setStep(step - 1) : navigate(-1))} className="icon-btn" aria-label={t('back')}>
+          <ChevronLeft size={20} />
+        </button>
+        <div>
+          <h1 className="find-work-title" style={{ fontSize: '1.3rem' }}>{t('postWorkTitle')}</h1>
+          <p style={{ margin: '2px 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+            {t('postWorkSubtitle')}
+          </p>
+        </div>
       </div>
 
-      {error && <Alert tone="danger">{error}</Alert>}
+      {/* 3-Step Progress Indicator */}
+      <div className="post-work-stepper">
+        <div className="stepper-step">
+          <div className={`stepper-dot ${step >= 1 ? 'is-active' : ''}`}>1</div>
+          <span className="stepper-label">{t('stepJobDetails')}</span>
+        </div>
+        <div className={`stepper-connector ${step >= 2 ? 'is-active' : ''}`} />
+        <div className="stepper-step">
+          <div className={`stepper-dot ${step >= 2 ? 'is-active' : ''}`}>2</div>
+          <span className="stepper-label">{t('stepSchedulePay')}</span>
+        </div>
+        <div className={`stepper-connector ${step >= 3 ? 'is-active' : ''}`} />
+        <div className="stepper-step">
+          <div className={`stepper-dot ${step >= 3 ? 'is-active' : ''}`}>3</div>
+          <span className="stepper-label">{t('stepLocationSkills')}</span>
+        </div>
+      </div>
+
+      {error && <div className="auth-error-msg" style={{ marginBottom: 14 }}>{error}</div>}
 
       <form onSubmit={handleSubmit}>
         {step === 1 && (
-          <Card>
+          <Card style={{ display: 'grid', gap: 14 }}>
             <Field label={t('jobTitleLabel')}>
               <Input
                 value={title}
@@ -87,6 +109,17 @@ export function PostJobPage() {
                 placeholder={t('jobTitlePlaceholder')}
                 required
               />
+            </Field>
+
+            <Field label={t('categoryLabel')}>
+              <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+                <option value="agriculture">{localizeCategory('agriculture')}</option>
+                <option value="construction">{localizeCategory('construction')}</option>
+                <option value="household">{localizeCategory('household')}</option>
+                <option value="transport">{localizeCategory('transport')}</option>
+                <option value="skilled">{localizeCategory('skilled')}</option>
+                <option value="other">{localizeCategory('other')}</option>
+              </Select>
             </Field>
 
             <Field label={t('jobDescLabel')}>
@@ -100,35 +133,33 @@ export function PostJobPage() {
               />
             </Field>
 
-            <Field label={t('jobCategoryLabel')}>
-              <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-                <option value="agriculture">कृषी कामे (Agriculture)</option>
-                <option value="construction">बांधकाम कामे (Construction)</option>
-                <option value="household">घरगुती कामे (Household)</option>
-                <option value="transport">वाहतूक / हमाली (Transport)</option>
-                <option value="other">इतर (Other)</option>
-              </Select>
-            </Field>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
-              <Button type="button" onClick={() => setStep(2)}>
-                {t('next')} →
-              </Button>
-            </div>
+            <button
+              type="button"
+              className="welcome-cta-btn"
+              onClick={() => {
+                if (!title.trim() || !description.trim()) return setError(t('requiredField') || 'Please fill in Title and Description.')
+                setError('')
+                setStep(2)
+              }}
+              style={{ marginTop: 10 }}
+            >
+              <span>{t('nextStep')}</span>
+              <ArrowRight size={16} />
+            </button>
           </Card>
         )}
 
         {step === 2 && (
-          <Card>
-            <div className="profile-form-grid">
-              <Field label={t('wageTypeLabel')}>
-                <Select value={paymentType} onChange={(e) => setPaymentType(e.target.value as 'daily' | 'fixed')}>
-                  <option value="daily">{t('daily')}</option>
-                  <option value="fixed">{t('fixed')}</option>
+          <Card style={{ display: 'grid', gap: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <Field label={t('payTypeLabel')}>
+                <Select value={paymentType} onChange={(e) => setPaymentType(e.target.value as any)}>
+                  <option value="daily">{localizeWageType('daily')}</option>
+                  <option value="fixed">{localizeWageType('fixed')}</option>
                 </Select>
               </Field>
 
-              <Field label={t('wageAmountLabel')}>
+              <Field label={t('amountLabel')}>
                 <Input
                   type="number"
                   min="100"
@@ -138,7 +169,9 @@ export function PostJobPage() {
                   required
                 />
               </Field>
+            </div>
 
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <Field label={t('workersNeededLabel')}>
                 <Input
                   type="number"
@@ -150,69 +183,75 @@ export function PostJobPage() {
                 />
               </Field>
 
-              <Field label={t('workDateLabel')}>
+              <Field label={t('startDateLabel')}>
                 <Input type="date" value={workDate} onChange={(e) => setWorkDate(e.target.value)} required />
-              </Field>
-
-              <Field label={t('startTimeLabel')}>
-                <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} required />
               </Field>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
-              <Button variant="secondary" type="button" onClick={() => setStep(1)}>
-                ← {t('back')}
+            <Field label={t('workTimingLabel')}>
+              <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} required />
+            </Field>
+
+            <div style={{ display: 'flex', gap: 12, marginTop: 10 }}>
+              <Button variant="secondary" type="button" onClick={() => setStep(1)} style={{ flex: 1 }}>
+                {t('prevStep')}
               </Button>
-              <Button type="button" onClick={() => setStep(3)}>
-                {t('next')} →
-              </Button>
+              <button
+                type="button"
+                className="welcome-cta-btn"
+                onClick={() => setStep(3)}
+                style={{ flex: 2 }}
+              >
+                <span>{t('nextStep')}</span>
+                <ArrowRight size={16} />
+              </button>
             </div>
           </Card>
         )}
 
         {step === 3 && (
-          <Card>
-            <div className="profile-form-grid">
-              <Field label={t('village')}>
+          <Card style={{ display: 'grid', gap: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <Field label={t('workVillageLabel')}>
                 <Input value={village} onChange={(e) => setVillage(e.target.value)} required />
               </Field>
-
-              <Field label={t('taluka')}>
-                <Input value={taluka} onChange={(e) => setTaluka(e.target.value)} required />
-              </Field>
-
-              <Field label={t('district')}>
+              <Field label={t('workDistrictLabel')}>
                 <Input value={district} onChange={(e) => setDistrict(e.target.value)} required />
               </Field>
             </div>
 
             <Field label={t('requiredSkillsLabel')}>
-              <div className="selectable-grid" style={{ marginTop: 8 }}>
+              <div className="skills-select-grid" style={{ marginTop: 4 }}>
                 {skillOptions.map((skill) => (
                   <button
                     key={skill.id}
                     type="button"
-                    className={`selection-card ${requiredSkillIds.includes(skill.id) ? 'is-selected' : ''}`}
+                    className={`skill-selectable-chip ${requiredSkillIds.includes(skill.id) ? 'is-selected' : ''}`}
                     onClick={() => toggleSkill(skill.id)}
                   >
                     <span>{skill.name[language]}</span>
-                    <small>{requiredSkillIds.includes(skill.id) ? '✓' : '+'}</small>
+                    <span>{requiredSkillIds.includes(skill.id) ? '✓' : '+'}</span>
                   </button>
                 ))}
               </div>
             </Field>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24 }}>
-              <Button variant="secondary" type="button" onClick={() => setStep(2)}>
-                ← {t('back')}
+            <div style={{ display: 'flex', gap: 12, marginTop: 10 }}>
+              <Button variant="secondary" type="button" onClick={() => setStep(2)} style={{ flex: 1 }}>
+                {t('prevStep')}
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? t('loading') : t('postWorkSubmit')}
-              </Button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="welcome-cta-btn"
+                style={{ flex: 2 }}
+              >
+                {isSubmitting ? t('saving') : t('submitJob')}
+              </button>
             </div>
           </Card>
         )}
       </form>
-    </section>
+    </div>
   )
 }

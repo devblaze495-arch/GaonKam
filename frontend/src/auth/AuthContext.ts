@@ -8,6 +8,7 @@ export type AuthContextValue = AuthState & {
   updateProfile: (profile: UserProfile) => Promise<void>
   updateIntents: (intents: UserIntent[]) => Promise<void>
   logout: () => Promise<void>
+  deleteAccount: () => Promise<void>
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null)

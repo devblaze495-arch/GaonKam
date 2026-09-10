@@ -1,4 +1,3 @@
-import { nearbyServices } from './mockData'
 import type { Service } from '../types'
 import { apiRequest } from './apiClient'
 
@@ -24,32 +23,22 @@ export type ServicesService = {
 
 export const servicesService: ServicesService = {
   async listNearby(village, taluka, district) {
-    try {
-      const queryParams = new URLSearchParams()
-      if (village) queryParams.set('village', village)
-      if (taluka) queryParams.set('taluka', taluka)
-      if (district) queryParams.set('district', district)
+    const queryParams = new URLSearchParams()
+    if (village) queryParams.set('village', village)
+    if (taluka) queryParams.set('taluka', taluka)
+    if (district) queryParams.set('district', district)
 
-      const qs = queryParams.toString()
-      const services = await apiRequest<Service[]>(`/services/nearby${qs ? `?${qs}` : ''}`)
-      return services
-    } catch {
-      return nearbyServices
-    }
+    const qs = queryParams.toString()
+    return apiRequest<Service[]>(`/services/nearby${qs ? `?${qs}` : ''}`)
   },
 
   async getServices(params = {}) {
-    try {
-      const queryParams = new URLSearchParams()
-      if (params.categoryId) queryParams.set('categoryId', params.categoryId)
-      if (params.query) queryParams.set('query', params.query)
+    const queryParams = new URLSearchParams()
+    if (params.categoryId) queryParams.set('categoryId', params.categoryId)
+    if (params.query) queryParams.set('query', params.query)
 
-      const qs = queryParams.toString()
-      const services = await apiRequest<Service[]>(`/services${qs ? `?${qs}` : ''}`)
-      return services
-    } catch {
-      return nearbyServices
-    }
+    const qs = queryParams.toString()
+    return apiRequest<Service[]>(`/services${qs ? `?${qs}` : ''}`)
   },
 
   async createService(input) {

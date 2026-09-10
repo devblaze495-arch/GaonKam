@@ -7,7 +7,7 @@ import { jobsService, type JobApplicationItem, type JobAssignmentItem } from '..
 
 export function JobApplicantsPage() {
   const { jobId } = useParams<{ jobId: string }>()
-  const { t } = useLanguage()
+  const { t, language, localizeApplicationStatus, localizeAssignmentStatus } = useLanguage()
 
   const [applications, setApplications] = useState<JobApplicationItem[]>([])
   const [assignments, setAssignments] = useState<JobAssignmentItem[]>([])
@@ -38,7 +38,7 @@ export function JobApplicantsPage() {
       await jobsService.updateApplicationStatus(jobId!, applicationId, status)
       loadData()
     } catch {
-      alert('Could not update status.')
+      alert(t('error'))
     }
   }
 
@@ -47,12 +47,15 @@ export function JobApplicantsPage() {
       await jobsService.confirmWorkCompletion(jobId!, assignmentId)
       loadData()
     } catch {
-      alert('Could not confirm work completion.')
+      alert(t('error'))
     }
   }
 
   if (isLoading) return <LoadingState label={t('loading')} />
-  if (hasError) return <ErrorState title="Error loading applicants" retryLabel={t('back')} onRetry={loadData} />
+  if (hasError) return <ErrorState title={t('errorLoadingApplicants')} retryLabel={t('back')} onRetry={loadData} />
+
+  const selectedWorkersHeading = language === 'mr' ? `निवडलेले कामगार (${assignments.length})` : language === 'hi' ? `चयनित कामगार (${assignments.length})` : `Selected Workers (${assignments.length})`
+  const noApplicantsDesc = language === 'mr' ? 'या कामासाठी अद्याप कोणत्याही कामगाराने अर्ज केलेला नाही.' : language === 'hi' ? 'इस काम के लिए अभी तक किसी कामगार ने आवेदन नहीं किया है।' : 'No workers have applied for this job yet.'
 
   return (
     <section className="page-section">
@@ -60,13 +63,13 @@ export function JobApplicantsPage() {
 
       {assignments.length > 0 && (
         <Card style={{ marginBottom: 20 }}>
-          <h3>Selected Workers ({assignments.length})</h3>
+          <h3 style={{ margin: 0, fontSize: '1.05rem' }}>{selectedWorkersHeading}</h3>
           <div style={{ display: 'grid', gap: 12, marginTop: 12 }}>
             {assignments.map((asg) => (
-              <div key={asg.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px', background: '#f1f5f9', borderRadius: 8 }}>
+              <div key={asg.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8 }}>
                 <div>
                   <strong>{asg.workerName}</strong>
-                  <div style={{ fontSize: '0.8rem', color: '#64748b' }}>Status: {asg.status}</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t('applicationStatusLabel')} {localizeAssignmentStatus(asg.status)}</div>
                 </div>
                 {asg.status === 'worker_completed' && (
                   <Button onClick={() => handleConfirmCompletion(asg.id)}>
@@ -80,15 +83,15 @@ export function JobApplicantsPage() {
       )}
 
       {applications.length === 0 ? (
-        <EmptyState title={t('noApplicantsYet')} description="No workers have applied for this job yet." />
+        <EmptyState title={t('noApplicantsYet')} description={noApplicantsDesc} />
       ) : (
         <div style={{ display: 'grid', gap: 12 }}>
           {applications.map((app) => (
             <Card key={app.id}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                 <div>
-                  <h3>{app.applicantName}</h3>
-                  <p style={{ margin: '4px 0', fontSize: '0.85rem', color: '#64748b' }}>
+                  <h3 style={{ margin: '0 0 4px', fontSize: '1.05rem' }}>{app.applicantName}</h3>
+                  <p style={{ margin: '4px 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                     📍 {app.applicantVillage}, {app.applicantDistrict}
                   </p>
                   <Rating value={app.rating || 4.5} />
@@ -107,7 +110,7 @@ export function JobApplicantsPage() {
                     </Button>
                   </>
                 ) : (
-                  <StatusBadge label={app.status.toUpperCase()} tone={app.status === 'accepted' ? 'success' : 'danger'} />
+                  <StatusBadge label={localizeApplicationStatus(app.status)} tone={app.status === 'accepted' ? 'success' : 'danger'} />
                 )}
               </div>
             </Card>

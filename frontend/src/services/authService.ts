@@ -15,6 +15,7 @@ export type AuthService = {
   updateProfile: (userId: string, profile: UserProfile) => Promise<User>
   updateIntents: (userId: string, intents: UserIntent[]) => Promise<User>
   logout: () => Promise<void>
+  deleteAccount: () => Promise<void>
 }
 
 function readUser(): User | null {
@@ -176,6 +177,19 @@ export const authService: AuthService = {
       const user = readUser()
       if (!user || user.id !== userId) throw new Error('USER_NOT_FOUND')
       return saveUser({ ...user, intents })
+    }
+  },
+
+  
+  async deleteAccount() {
+    try {
+      await apiRequest('/users/me', { method: 'DELETE' })
+    } catch (err) {
+      console.error('Failed to delete account:', err)
+    } finally {
+      removeAuthToken()
+      window.localStorage.removeItem(userStorageKey)
+      window.localStorage.removeItem(pendingPhoneStorageKey)
     }
   },
 

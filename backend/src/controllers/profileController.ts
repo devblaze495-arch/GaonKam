@@ -98,4 +98,16 @@ export class ProfileController {
       return next(error)
     }
   }
+
+  /**
+   * DELETE /api/users/me
+   */
+  static async deleteAccount(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const data = await ProfileService.deleteAccount(req.user!.id)
+      return res.json(successResponse(data, 'Account deleted successfully'))
+    } catch (error) {
+      return next(error)
+    }
+  }
 }

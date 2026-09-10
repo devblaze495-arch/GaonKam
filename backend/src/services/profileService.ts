@@ -334,4 +334,99 @@ export class ProfileService {
       },
     }
   }
+
+  /**
+   * Delete User Account completely
+   */
+  static async deleteAccount(userId: string) {
+    return prisma.$transaction(async (tx) => {
+      // 1. Delete user ratings given or received
+      await tx.rating.deleteMany({
+        where: {
+          OR: [{ fromUserId: userId }, { toUserId: userId }],
+        },
+      })
+
+      // 2. Delete disputes
+      await tx.dispute.deleteMany({
+        where: {
+          OR: [{ raisedById: userId }, { againstUserId: userId }],
+        },
+      })
+
+      // 3. Delete job completions
+      await tx.jobCompletion.deleteMany({
+        where: {
+          OR: [{ workerId: userId }, { markedById: userId }],
+        },
+      })
+
+      // 4. Delete job assignments where user is the worker
+      await tx.jobAssignment.deleteMany({
+        where: { workerId: userId },
+      })
+
+      // 5. Delete job applications submitted by user
+      await tx.jobApplication.deleteMany({
+        where: { applicantId: userId },
+      })
+
+      // 6. Delete user's posted jobs and their dependencies
+      const userJobs = await tx.job.findMany({
+        where: { employerId: userId },
+        select: { id: true },
+      })
+      const userJobIds = userJobs.map((j) => j.id)
+
+      if (userJobIds.length > 0) {
+        await tx.jobApplication.deleteMany({
+          where: { jobId: { in: userJobIds } },
+        })
+        await tx.jobAssignment.deleteMany({
+          where: { jobId: { in: userJobIds } },
+        })
+        await tx.jobCompletion.deleteMany({
+          where: { jobId: { in: userJobIds } },
+        })
+        await tx.jobRequiredSkill.deleteMany({
+          where: { jobId: { in: userJobIds } },
+        })
+        await tx.jobSkill.deleteMany({
+          where: { jobId: { in: userJobIds } },
+        })
+        await tx.rating.deleteMany({
+          where: { jobId: { in: userJobIds } },
+        })
+        await tx.dispute.deleteMany({
+          where: { jobId: { in: userJobIds } },
+        })
+        await tx.job.deleteMany({
+          where: { id: { in: userJobIds } },
+        })
+      }
+
+      // 7. Delete services listed by user
+      await tx.service.deleteMany({
+        where: { providerId: userId },
+      })
+
+      // 8. Delete user skills, roles, availabilities
+      await tx.userSkill.deleteMany({
+        where: { userId },
+      })
+      await tx.userRole.deleteMany({
+        where: { userId },
+      })
+      await tx.userAvailability.deleteMany({
+        where: { userId },
+      })
+
+      // 9. Delete the user record
+      await tx.user.delete({
+        where: { id: userId },
+      })
+
+      return { success: true, message: 'User account and all related data deleted successfully' }
+    })
+  }
 }

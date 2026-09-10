@@ -8,7 +8,7 @@ import { localizedText, type Job } from '../types'
 import { jobStatusTone } from '../types/status'
 
 export function MyPostedJobsPage() {
-  const { language, t } = useLanguage()
+  const { language, t, localizeJobStatus } = useLanguage()
   const [jobs, setJobs] = useState<Job[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
@@ -28,19 +28,22 @@ export function MyPostedJobsPage() {
   }
 
   async function handleCancel(jobId: string) {
-    if (!window.confirm('Are you sure you want to cancel this job?')) return
+    const confirmMsg = language === 'mr' ? 'तुम्हाला हे काम रद्द करायचे आहे का?' : language === 'hi' ? 'क्या आप इस काम को रद्द करना चाहते हैं?' : 'Are you sure you want to cancel this job?'
+    if (!window.confirm(confirmMsg)) return
     try {
       await jobsService.cancelJob(jobId)
       loadPostedJobs()
     } catch {
-      alert('Could not cancel job.')
+      alert(t('error'))
     }
   }
 
   const filteredJobs = jobs.filter((j) => (filter === 'all' ? true : j.status === filter))
 
   if (isLoading) return <LoadingState label={t('loading')} />
-  if (hasError) return <ErrorState title="Error loading posted jobs" retryLabel={t('cancel')} onRetry={loadPostedJobs} />
+  if (hasError) return <ErrorState title={t('errorLoadingJobs')} retryLabel={t('retry')} onRetry={loadPostedJobs} />
+
+  const emptyDesc = language === 'mr' ? 'या श्रेणीत अद्याप कोणतीही कामे पोस्ट केलेली नाहीत.' : language === 'hi' ? 'इस श्रेणी में अभी तक कोई काम पोस्ट नहीं किया गया है।' : "You haven't posted any jobs under this category."
 
   return (
     <section className="page-section">
@@ -66,13 +69,13 @@ export function MyPostedJobsPage() {
       </div>
 
       {filteredJobs.length === 0 ? (
-        <EmptyState title="No posted jobs found" description="You haven't posted any jobs under this category." />
+        <EmptyState title={t('noPostedJobs')} description={emptyDesc} />
       ) : (
         <div className="jobs-list">
           {filteredJobs.map((job) => (
             <Card key={job.id} className="job-card">
               <div className="job-card__top">
-                <StatusBadge label={job.status.toUpperCase()} tone={jobStatusTone[job.status] || 'info'} />
+                <StatusBadge label={localizeJobStatus(job.status)} tone={jobStatusTone[job.status] || 'info'} />
                 <span>₹{job.paymentDetails?.amount || 600}</span>
               </div>
               <h3>{localizedText(job.title, language)}</h3>

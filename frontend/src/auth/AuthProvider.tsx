@@ -39,6 +39,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await authService.logout()
       setState((current) => ({ ...current, status: 'unauthenticated', user: null }))
     },
+    async deleteAccount() {
+      await authService.deleteAccount()
+      setState({ status: 'unauthenticated', onboardingCompleted: false, user: null })
+    },
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

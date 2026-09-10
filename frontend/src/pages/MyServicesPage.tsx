@@ -6,7 +6,7 @@ import { servicesService } from '../services/servicesService'
 
 export function MyServicesPage() {
   const { user } = useAuth()
-  const { t } = useLanguage()
+  const { language, t, localizeWageType } = useLanguage()
 
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -32,23 +32,25 @@ export function MyServicesPage() {
       setName('')
       setDescription('')
     } catch {
-      alert('Error creating service.')
+      alert(t('error'))
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  const namePlaceholder = language === 'mr' ? 'उदा. इलेक्ट्रिशियन, ट्रॅक्टर भाडे' : language === 'hi' ? 'उदा. इलेक्ट्रीशियन, ट्रैक्टर किराया' : 'e.g. Electrician, Tractor Rental'
+
   return (
     <section className="page-section">
       <PageHeader title={t('myServices')} backUrl="/services" />
 
-      {success && <Alert tone="success">Service listed successfully!</Alert>}
+      {success && <Alert tone="success">{t('serviceListedSuccess')}</Alert>}
 
       <Card>
-        <h3>{t('addServiceTitle')}</h3>
-        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 16, marginTop: 12 }}>
+        <h3 style={{ margin: '0 0 12px', fontSize: '1.1rem' }}>{t('addServiceTitle')}</h3>
+        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 16 }}>
           <Field label={t('serviceNameLabel')}>
-            <Input value={name} onChange={(e) => setName(e.target.value)} required placeholder="e.g. Electrician, Tractor Rental" />
+            <Input value={name} onChange={(e) => setName(e.target.value)} required placeholder={namePlaceholder} />
           </Field>
 
           <Field label={t('serviceDescLabel')}>
@@ -58,9 +60,9 @@ export function MyServicesPage() {
           <div className="profile-form-grid">
             <Field label={t('rateTypeLabel')}>
               <Select value={rateType} onChange={(e) => setRateType(e.target.value as any)}>
-                <option value="daily">{t('daily')}</option>
-                <option value="hourly">{t('hourly')}</option>
-                <option value="fixed">{t('fixed')}</option>
+                <option value="daily">{localizeWageType('daily')}</option>
+                <option value="hourly">{localizeWageType('hourly')}</option>
+                <option value="fixed">{localizeWageType('fixed')}</option>
               </Select>
             </Field>
 
@@ -70,7 +72,7 @@ export function MyServicesPage() {
           </div>
 
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? t('loading') : t('save')}
+            {isSubmitting ? t('saving') : t('save')}
           </Button>
         </form>
       </Card>

@@ -1,228 +1,227 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { Alert, Button, Card, ConfirmDialog, Field, Input, Rating, StarRating, StatusBadge, TrustScore } from '../components/ui/Foundation'
-import { EmptyState, ErrorState, LoadingState } from '../components/states/AsyncStates'
+import { useNavigate, useParams } from 'react-router-dom'
+import { ChevronLeft, Heart, Share2, MapPin, Calendar, Clock } from 'lucide-react'
+import { Card, TrustScore } from '../components/ui/Foundation'
+import { ErrorState, LoadingState } from '../components/states/AsyncStates'
 import { useLanguage } from '../i18n/useLanguage'
-import { useAuth } from '../auth/useAuth'
-import { useJobText } from '../i18n/jobsTranslations'
 import { jobsService } from '../services/jobsService'
 import { applicationService, type JobApplication } from '../services/applicationService'
 import { skillOptions } from '../data/profileData'
 import { localizedText, type Job } from '../types'
 import { localizedName } from '../types/auth'
-import { jobStatusTone } from '../types/status'
-import { profileService } from '../services/profileService'
 
 export function JobDetailsPage() {
-  const { jobId } = useParams()
-  const { language, t } = useLanguage()
-  const jt = useJobText(language)
-  const { user } = useAuth()
+  const { jobId } = useParams<{ jobId: string }>()
+  const navigate = useNavigate()
+  const { language, t, localizeCategory, localizeApplicationStatus, formatWorkersNeeded } = useLanguage()
   const [job, setJob] = useState<Job | null>(null)
   const [application, setApplication] = useState<JobApplication | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isApplying, setIsApplying] = useState(false)
   const [error, setError] = useState(false)
-  const [confirm, setConfirm] = useState(false)
-  const [success, setSuccess] = useState(false)
-  const [userSkillIds, setUserSkillIds] = useState<string[]>([])
-
-  // Modal states for Dispute and Rating
-  const [showDisputeModal, setShowDisputeModal] = useState(false)
-  const [disputeReason, setDisputeReason] = useState('')
-  const [disputeDesc, setDisputeDesc] = useState('')
-
-  const [showRatingModal, setShowRatingModal] = useState(false)
-  const [ratingVal, setRatingVal] = useState(5)
-  const [ratingComment, setRatingComment] = useState('')
+  const [isBookmarked, setIsBookmarked] = useState(false)
 
   useEffect(() => {
     if (!jobId) return
-    Promise.all([jobsService.getJobById(jobId), applicationService.getApplicationStatus(jobId)])
-      .then(([nextJob, nextApplication]) => { setJob(nextJob); setApplication(nextApplication) })
+    setIsLoading(true)
+    Promise.all([
+      jobsService.getJobById(jobId),
+      applicationService.getMyApplications().then((apps) => apps.find((a) => a.jobId === jobId) || null).catch(() => null),
+    ])
+      .then(([nextJob, nextApp]) => {
+        setJob(nextJob)
+        setApplication(nextApp)
+      })
       .catch(() => setError(true))
       .finally(() => setIsLoading(false))
   }, [jobId])
 
-  useEffect(() => { if (user) profileService.getProfile(user).then((profile) => setUserSkillIds(profile.skills.map((skill) => skill.skillId))).catch(() => undefined) }, [user])
-
-  if (isLoading) return <LoadingState label={jt('jobDetails')} />
-  if (error) return <section className="page-section"><ErrorState title={jt('applicationFailed')} retryLabel={jt('retry')} onRetry={() => window.location.reload()} /></section>
-  if (!job) return <section className="page-section"><EmptyState title={jt('noJobs')} description={jt('noResultsHint')} /></section>
-
-  const currentJob = job
-  const statusLabel = job.status === 'open' ? jt('openStatus') : job.status === 'expired' ? jt('expiredStatus') : job.status === 'filled' ? jt('filledStatus') : job.status === 'completed' ? jt('completedStatus') : jt('applicationsClosed')
-  const skills = job.requiredSkillIds.map((id) => skillOptions.find((skill) => skill.id === id)).filter(Boolean)
-  const hasMatch = job.requiredSkillIds.some((skillId) => userSkillIds.includes(skillId))
-
-  async function apply() {
+  async function handleApply() {
+    if (!job) return
     setIsApplying(true)
     try {
-      const next = await applicationService.applyForJob(currentJob.id)
+      const next = await applicationService.applyForJob(job.id)
       setApplication(next)
-      setSuccess(true)
-      setConfirm(false)
     } catch {
-      setError(true)
+      alert(t('error'))
     } finally {
       setIsApplying(false)
     }
   }
 
   async function handleWithdraw() {
-    if (!window.confirm(t('withdrawConfirm'))) return
+    if (!job || !window.confirm(t('confirm') + '?')) return
     try {
-      await applicationService.withdrawApplication(currentJob.id)
+      await applicationService.withdrawApplication(job.id)
       setApplication(null)
     } catch {
-      alert('Could not withdraw application.')
+      alert(t('error'))
     }
   }
 
-  async function handleDisputeSubmit() {
-    if (!disputeReason.trim()) return
-    try {
-      await jobsService.createJobDispute(currentJob.id, { reason: disputeReason, description: disputeDesc })
-      alert('Dispute raised successfully.')
-      setShowDisputeModal(false)
-    } catch {
-      alert('Error submitting dispute.')
-    }
+  if (isLoading) return <LoadingState label={t('loadingJobDetails')} />
+  if (error || !job) {
+    return (
+      <div style={{ padding: 20 }}>
+        <ErrorState title={t('jobNotFound')} retryLabel={t('back')} onRetry={() => navigate('/jobs')} />
+      </div>
+    )
   }
 
-  async function handleRatingSubmit() {
-    try {
-      await jobsService.createJobRating(currentJob.id, { targetUserId: currentJob.postedBy as any, rating: ratingVal, comment: ratingComment })
-      alert('Rating submitted successfully!')
-      setShowRatingModal(false)
-    } catch {
-      alert('Error submitting rating.')
-    }
-  }
+  const skills = job.requiredSkillIds.map((id) => skillOptions.find((s) => s.id === id)?.name[language] || id)
+  const durationText = language === 'mr' ? '१-३ दिवस' : language === 'hi' ? '१-३ दिन' : '1-3 days'
+  const categoryString = typeof job.category === 'string' ? job.category : (job.category as any)?.[language] || 'agriculture'
 
   return (
-    <section className="page-section job-details-page">
-      <Link className="back-link" to="/jobs">← {jt('backToJobs')}</Link>
-      
-      <div className="job-details-heading" style={{ marginTop: 12 }}>
-        <div>
-          <span className="eyebrow">{localizedText(currentJob.category, language)}</span>
-          <h1>{localizedText(currentJob.title, language)}</h1>
+    <div className="job-details-reference-view">
+      {/* Top Hero Image Banner */}
+      <div className="job-details-hero-banner">
+        <div className="job-details-top-bar">
+          <button type="button" onClick={() => navigate('/jobs')} className="hero-floating-icon-btn" aria-label={t('back')}>
+            <ChevronLeft size={20} />
+          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => setIsBookmarked(!isBookmarked)}
+              className="hero-floating-icon-btn"
+              aria-label={t('bookmarkJob')}
+            >
+              <Heart size={18} fill={isBookmarked ? '#A94F32' : 'none'} color={isBookmarked ? '#A94F32' : '#FFFFFF'} />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (navigator.share) navigator.share({ title: localizedText(job.title, language), url: window.location.href }).catch(() => null)
+                else alert(window.location.href)
+              }}
+              className="hero-floating-icon-btn"
+              aria-label={t('shareJob')}
+            >
+              <Share2 size={18} />
+            </button>
+          </div>
         </div>
-        <StatusBadge label={statusLabel} tone={jobStatusTone[currentJob.status]} />
       </div>
 
-      <Card className="job-detail-card">
-        <div className="job-detail-facts">
-          <strong>₹{currentJob.paymentDetails.amount.toLocaleString('en-IN')} <small>{currentJob.paymentDetails.type === 'daily' ? jt('perDay') : jt('fixedPayment')}</small></strong>
-          <span>📍 {localizedText(currentJob.location, language)} • {localizedText(currentJob.distance, language)}</span>
-          <span>📅 {localizedText(currentJob.dateLabel, language)} • {currentJob.schedule.time}</span>
-        </div>
-
-        <h2 className="job-detail-section-title">{jt('description')}</h2>
-        <p className="job-description">{localizedText(currentJob.description, language)}</p>
-
-        <h2 className="job-detail-section-title">{jt('requiredSkills')}</h2>
-        <div className="job-skill-tags">
-          {skills.map((skill) => <span key={skill!.id}>{skill!.name[language]}</span>)}
-        </div>
-
-        {hasMatch && <Alert tone="success">{jt('skillMatch')}</Alert>}
-
-        <h2 className="job-detail-section-title">{jt('employer')}</h2>
-        <div className="employer-summary">
-          <div className="profile-avatar">{localizedName(currentJob.employer.name, language).slice(0, 1)}</div>
-          <div>
-            <h3>{localizedName(currentJob.employer.name, language)}</h3>
-            <p>{localizedText(currentJob.employer.location, language)}</p>
-            <Rating value={currentJob.employer.rating} accessibleLabel={`${currentJob.employer.rating} ${jt('reviews')}`} />
+      {/* Main Details Body */}
+      <div className="job-details-body-container">
+        <div className="job-details-header-info">
+          <h1 className="job-details-title">{localizedText(job.title, language)}</h1>
+          <div className="job-details-loc-dist">
+            <MapPin size={15} color="var(--primary)" />
+            <span>{localizedText(job.location, language)} • {localizedText(job.distance, language)}</span>
           </div>
-          <TrustScore score={currentJob.employer.trustScore} label={t('trustScore')} />
-        </div>
 
-        <div className="job-detail-row">
-          <span>{jt('workersRequired')}</span>
-          <strong>{currentJob.workersRequired}</strong>
-        </div>
-      </Card>
-
-      {success && <Alert tone="success">{jt('applicationSubmitted')}</Alert>}
-
-      {application ? (
-        <Card className="application-state" style={{ marginTop: 16 }}>
-          <div>
-            <strong>{jt('applied')}</strong>
-            <p style={{ margin: '4px 0 0', fontSize: '0.85rem' }}>
-              {application.status === 'pending' ? jt('pendingApplication') : application.status === 'accepted' ? jt('acceptedApplication') : jt('rejectedApplication')}
-            </p>
+          <div className="job-details-wage-row">
+            <div className="job-details-wage-amount">₹{job.paymentDetails.amount.toLocaleString('en-IN')}</div>
+            <span className="job-details-wage-unit">
+              / {job.paymentDetails.type === 'daily' ? (language === 'mr' ? 'दिवस' : language === 'hi' ? 'दिन' : 'day') : (language === 'mr' ? 'काम' : language === 'hi' ? 'काम' : 'job')}
+            </span>
           </div>
-          {application.status === 'pending' && (
-            <Button variant="secondary" onClick={handleWithdraw}>
-              {t('withdrawApplication')}
-            </Button>
-          )}
+
+          {/* Category & Worker tags */}
+          <div className="job-details-chips-row">
+            <span className="details-chip">{localizeCategory(categoryString)}</span>
+            <span className="details-chip">{formatWorkersNeeded(job.workersRequired)}</span>
+          </div>
+        </div>
+
+        {/* 3-Column Schedule & Details Card */}
+        <Card className="job-schedule-facts-card">
+          <div className="schedule-fact-item">
+            <div className="fact-label-row">
+              <Calendar size={13} color="var(--text-muted)" />
+              <span>{t('startDateLabel')}</span>
+            </div>
+            <strong>{localizedText(job.dateLabel, language)}</strong>
+          </div>
+
+          <div className="schedule-fact-item" style={{ borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)', padding: '0 10px' }}>
+            <div className="fact-label-row">
+              <Clock size={13} color="var(--text-muted)" />
+              <span>{t('durationLabel')}</span>
+            </div>
+            <strong>{durationText}</strong>
+          </div>
+
+          <div className="schedule-fact-item">
+            <div className="fact-label-row">
+              <Clock size={13} color="var(--text-muted)" />
+              <span>{t('timingLabel')}</span>
+            </div>
+            <strong>{job.schedule.time || '8:00 AM - 5:00 PM'}</strong>
+          </div>
         </Card>
-      ) : currentJob.status === 'open' ? (
-        <Button disabled={isApplying} onClick={() => setConfirm(true)} style={{ marginTop: 16 }}>
-          {isApplying ? jt('applicationSubmitted') : jt('applyForWork')}
-        </Button>
-      ) : (
-        <Button disabled style={{ marginTop: 16 }}>{jt('applicationsClosed')}</Button>
-      )}
 
-      <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-        <Button variant="quiet" onClick={() => setShowRatingModal(true)}>
-          ⭐ {t('rateEmployer')}
-        </Button>
-        <Button variant="quiet" onClick={() => setShowDisputeModal(true)}>
-          ⚠️ {t('disputeTitle')}
-        </Button>
+        {/* Description Section */}
+        <div className="job-details-section">
+          <h2 className="details-section-heading">{t('descriptionLabel')}</h2>
+          <p className="job-details-desc-text">
+            {localizedText(job.description, language)}
+          </p>
+        </div>
+
+        {/* Required Skills */}
+        {skills.length > 0 && (
+          <div className="job-details-section">
+            <h2 className="details-section-heading">{t('requiredSkillsLabel')}</h2>
+            <div className="job-details-chips-row">
+              {skills.map((skill, i) => (
+                <span key={i} className="details-chip" style={{ backgroundColor: 'var(--accent-olive-light)', color: 'var(--accent-olive)' }}>
+                  {skill}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Employer Overview */}
+        <div className="job-details-section">
+          <h2 className="details-section-heading">{t('employerLabel')}</h2>
+          <Card style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 42, height: 42, borderRadius: '50%', backgroundColor: 'var(--accent-blue-light)', color: 'var(--accent-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
+                {localizedName(job.employer.name, language).slice(0, 1)}
+              </div>
+              <div>
+                <strong style={{ fontSize: '0.95rem' }}>{localizedName(job.employer.name, language)}</strong>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{localizedText(job.employer.location, language)}</div>
+              </div>
+            </div>
+            <TrustScore score={job.employer.trustScore || 85} label={t('trust')} />
+          </Card>
+        </div>
+
+        {/* Primary CTA Button */}
+        <div className="job-details-bottom-cta">
+          {application ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 10 }}>
+                <span>{t('applicationStatusLabel')} <strong>{localizeApplicationStatus(application.status)}</strong></span>
+                {application.status === 'pending' && (
+                  <button type="button" onClick={handleWithdraw} className="withdraw-text-btn">
+                    {language === 'mr' ? 'मागे घ्या' : language === 'hi' ? 'वापस लें' : 'Withdraw'}
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : job.status === 'open' ? (
+            <button
+              type="button"
+              disabled={isApplying}
+              onClick={handleApply}
+              className="welcome-cta-btn"
+            >
+              {isApplying ? t('loading') : t('applyForWork')}
+            </button>
+          ) : (
+            <button type="button" disabled className="welcome-cta-btn" style={{ opacity: 0.6 }}>
+              {t('applicationsClosed')}
+            </button>
+          )}
+        </div>
       </div>
-
-      {confirm && (
-        <ConfirmDialog
-          title={jt('confirmApplication')}
-          text={jt('confirmApplicationText')}
-          onConfirm={apply}
-          onCancel={() => setConfirm(false)}
-          confirmLabel={jt('applyForWork')}
-          cancelLabel={t('cancel')}
-        />
-      )}
-
-      {showDisputeModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3>{t('disputeTitle')}</h3>
-            <Field label={t('disputeReason')}>
-              <Input value={disputeReason} onChange={(e) => setDisputeReason(e.target.value)} placeholder="e.g. Non-payment, unsafe work" />
-            </Field>
-            <Field label={t('disputeDescription')}>
-              <textarea className="form-control" rows={3} value={disputeDesc} onChange={(e) => setDisputeDesc(e.target.value)} />
-            </Field>
-            <div className="modal-actions">
-              <Button variant="secondary" onClick={() => setShowDisputeModal(false)}>{t('cancel')}</Button>
-              <Button onClick={handleDisputeSubmit}>{t('submitDispute')}</Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showRatingModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3>{t('submitRating')}</h3>
-            <StarRating value={ratingVal} onChange={setRatingVal} />
-            <Field label={t('reviews')}>
-              <textarea className="form-control" rows={2} value={ratingComment} onChange={(e) => setRatingComment(e.target.value)} placeholder="Share your experience..." />
-            </Field>
-            <div className="modal-actions">
-              <Button variant="secondary" onClick={() => setShowRatingModal(false)}>{t('cancel')}</Button>
-              <Button onClick={handleRatingSubmit}>{t('submitRating')}</Button>
-            </div>
-          </div>
-        </div>
-      )}
-    </section>
+    </div>
   )
 }

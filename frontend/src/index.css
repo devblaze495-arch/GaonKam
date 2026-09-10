@@ -1,14 +1,62 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Noto+Sans+Devanagari:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root { font-family: 'DM Sans', 'Noto Sans Devanagari', sans-serif; line-height: 1.5; font-weight: 400; color: #20302b; background: #fbfcf8; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+:root {
+  --bg-main: #F7F3EA;
+  --bg-surface: #FFFCF6;
+  --text-primary: #10212A;
+  --text-muted: #54656F;
+  --text-light: #7E8E98;
+  
+  --primary: #A94F32;
+  --primary-hover: #924127;
+  --primary-light: #F9EFEB;
+  
+  --accent-olive: #66784D;
+  --accent-olive-light: #F2F5ED;
+  
+  --accent-blue: #456A8C;
+  --accent-blue-light: #EEF3F7;
+  
+  --border: #DDD7CC;
+  --border-light: #ECE7DE;
+  
+  --status-success: #66784D;
+  --status-success-bg: #F2F5ED;
+  --status-pending: #C28328;
+  --status-pending-bg: #FDF7EC;
+  --status-error: #B94A4A;
+  --status-error-bg: #FDF2F2;
+  --status-info: #456A8C;
+  --status-info-bg: #EEF3F7;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 9999px;
+
+  font-family: 'DM Sans', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--text-primary);
+  background-color: var(--bg-main);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
 html { scroll-behavior: smooth; }
-body { margin: 0; min-width: 320px; min-height: 100vh; }
+body { margin: 0; min-width: 320px; min-height: 100vh; background-color: var(--bg-main); color: var(--text-primary); }
 * { box-sizing: border-box; }
-button, input, select { font: inherit; }
+button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
-button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid rgba(34, 107, 75, .35); outline-offset: 2px; }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-main); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-light); }
+
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-#root { min-height: 100vh; }
+#root { min-height: 100vh; display: flex; flex-direction: column; }

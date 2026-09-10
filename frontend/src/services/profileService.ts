@@ -6,19 +6,20 @@ import { apiRequest } from './apiClient'
 const profileStorageKey = 'gaavkaam.profile.'
 
 function defaultProfile(user: User): ProfileData {
+  const nameNorm = normalizeLocalizedName(user.profile?.fullName) ?? { original: '' }
   return {
     userId: user.id,
-    fullName: normalizeLocalizedName(user.profile?.fullName) ?? { original: 'शुभ', en: 'Shubh' },
+    fullName: nameNorm,
     village: user.profile?.village ?? '',
     taluka: user.profile?.taluka ?? '',
     district: user.profile?.district ?? '',
     preferredLanguage: user.profile?.preferredLanguage ?? 'mr',
-    languagesKnown: user.profile?.languagesKnown ?? ['marathi', 'hindi'],
-    skills: [{ skillId: 'farming', experience: 'five-plus' }, { skillId: 'general-labor', experience: 'three-five' }, { skillId: 'driving', experience: 'one-three' }],
-    workPreferences: { dailyWage: 650, availability: 'this-week', selectedDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'] },
-    transportation: { vehicles: ['motorcycle'], canTravel: true, maxDistance: '10' },
-    trust: { score: 92, rating: 4.8, reviewCount: 24, completedJobs: 31 },
-    rating: { rating: 4.8, reviewCount: 24 },
+    languagesKnown: user.profile?.languagesKnown ?? ['marathi'],
+    skills: [],
+    workPreferences: { dailyWage: 500, availability: 'this-week', selectedDays: [] },
+    transportation: { vehicles: [], canTravel: true, maxDistance: '10' },
+    trust: { score: 50, rating: 0, reviewCount: 0, completedJobs: 0 },
+    rating: { rating: 0, reviewCount: 0 },
   }
 }
 
@@ -59,7 +60,7 @@ function mergeProfile(profile: ProfileData): UserProfile {
 function mapBackendProfileToFrontend(backendProfile: any, user: User): ProfileData {
   const fullNameNorm =
     normalizeLocalizedName(backendProfile.fullName) ??
-    normalizeLocalizedName(user.profile?.fullName) ?? { original: 'गावाकडचा कामगार' }
+    normalizeLocalizedName(user.profile?.fullName) ?? { original: '' }
 
   return {
     userId: user.id,
@@ -71,23 +72,23 @@ function mapBackendProfileToFrontend(backendProfile: any, user: User): ProfileDa
     languagesKnown: backendProfile.languagesKnown ?? user.profile?.languagesKnown ?? ['marathi'],
     skills: backendProfile.skills || [],
     workPreferences: {
-      dailyWage: backendProfile.workPreferences?.dailyWage ?? 650,
+      dailyWage: backendProfile.workPreferences?.dailyWage ?? 500,
       availability: backendProfile.workPreferences?.availability ?? 'this-week',
       selectedDays: backendProfile.workPreferences?.selectedDays ?? [],
     },
     transportation: {
-      vehicles: backendProfile.transportation?.vehicles ?? ['motorcycle'],
+      vehicles: backendProfile.transportation?.vehicles ?? [],
       canTravel: backendProfile.transportation?.canTravel ?? true,
       maxDistance: backendProfile.transportation?.maxDistance ?? '10',
     },
     trust: {
-      score: backendProfile.trust?.score ?? 90,
-      rating: backendProfile.trust?.rating ?? 0.0,
+      score: backendProfile.trust?.score ?? 50,
+      rating: backendProfile.trust?.rating ?? 0,
       reviewCount: backendProfile.trust?.reviewCount ?? 0,
       completedJobs: backendProfile.trust?.completedJobs ?? 0,
     },
     rating: {
-      rating: backendProfile.rating?.rating ?? 0.0,
+      rating: backendProfile.rating?.rating ?? 0,
       reviewCount: backendProfile.rating?.reviewCount ?? 0,
     },
   }

@@ -11,4 +11,9 @@ router.put('/me/skills', requireAuth, ProfileController.updateSkills)
 router.put('/me/preferences', requireAuth, ProfileController.updatePreferences)
 router.put('/me/transportation', requireAuth, ProfileController.updateTransportation)
 
+
+router.delete('/me', requireAuth, ProfileController.deleteAccount)
+router.delete('/me/account', requireAuth, ProfileController.deleteAccount)
+
 export default router
+
